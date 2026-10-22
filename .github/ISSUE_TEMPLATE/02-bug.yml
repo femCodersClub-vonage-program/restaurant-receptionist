@@ -1,0 +1,79 @@
+name: Bug report
+description: Report incorrect behaviour in the project.
+title: "fix: short description"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before creating this issue
+
+        Only the project mentor creates and prioritizes issues. Do not include real personal data, credentials, tokens, or API keys in any field.
+
+  - type: textarea
+    id: observed-behaviour
+    attributes:
+      label: Observed behaviour
+      description: Describe what actually happens.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: Expected behaviour
+      description: Describe what should happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      multiple: true
+      options:
+        - Local development
+        - Test or demo environment
+        - Production-like demonstration environment
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Blocking — prevents a critical workflow or may expose data
+        - Degraded — the workflow works incorrectly or only partially
+        - Minor — visible defect without functional impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add a relevant file path, sanitized log, screenshot, or other evidence. Remove names, phone numbers, email addresses, secrets, and tokens.
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Data, security, and user impact
+      description: Explain whether the bug exposes, corrupts, or incorrectly processes personal data or affects a security control. Write "No known impact" when appropriate.
+      placeholder: No known impact.
+    validations:
+      required: true

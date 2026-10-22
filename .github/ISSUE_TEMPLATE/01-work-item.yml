@@ -1,0 +1,108 @@
+name: Work item
+description: An approved feature, fix, documentation, test, or maintenance task.
+title: "type: short description"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before creating this issue
+
+        Only the project mentor creates and prioritizes issues. Use an English title in this format:
+
+        ```text
+        type: short imperative description
+        ```
+
+        Valid types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `security`.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and problem
+      description: Explain why this work is needed. Describe the problem, not the implementation.
+      placeholder: What happens today, who is affected, and why this needs attention now.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: State the intended outcome at a high level.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List what this work includes.
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: List work that this issue intentionally does not include.
+      placeholder: Use "None identified" only when appropriate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Add observable and verifiable conditions. If it cannot be verified, it is not an acceptance criterion.
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High — blocks another task, a critical workflow, or a safety concern
+        - Medium — important work without an immediate blocker
+        - Low — planned improvement or conscious technical debt
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: Link related issues, decisions, external documentation, or explain that there are none.
+      placeholder: None identified.
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Expected validation
+      description: State which tests, manual scenarios, or review evidence will demonstrate that the work is complete.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: data-and-security
+    attributes:
+      label: Data and security review
+      options:
+        - label: This issue must not include real personal data, secrets, credentials, or API keys.
+          required: true
+        - label: I have explicitly considered whether this work handles personal data or changes security behaviour.
+          required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Technical notes
+      description: Record relevant implementation constraints, risks, alternatives, or open questions.
+    validations:
+      required: false
