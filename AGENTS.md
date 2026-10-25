@@ -4,7 +4,7 @@ These instructions apply to coding assistants working in this repository.
 
 ## Project context
 
-Restaurant Receptionist is an educational FemCoders Club pilot project developed in collaboration with Vonage. It demonstrates a reservation journey for a fictional restaurant: an incoming call, guided data capture, capacity validation, confirmed persistence, a notification request, and a basic staff dashboard.
+Restaurant Receptionist is a FemCoders Club pilot project developed in collaboration with Vonage. It demonstrates a reservation journey for a fictional restaurant: an incoming call, guided data capture, capacity validation, confirmed persistence, a notification request, and a basic staff dashboard.
 
 Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [docs/mvp-specification.md](docs/mvp-specification.md) before proposing implementation changes.
 

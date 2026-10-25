@@ -1,6 +1,6 @@
 # Restaurant Receptionist
 
-Restaurant Receptionist is an educational pilot project by FemCoders Club in collaboration with Vonage.
+Restaurant Receptionist is a FemCoders Club pilot project developed in collaboration with Vonage.
 
 ## Problem
 

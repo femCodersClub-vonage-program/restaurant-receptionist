@@ -1,6 +1,6 @@
 # Contributing to Restaurant Receptionist
 
-Thank you for contributing to Restaurant Receptionist, an educational pilot project by FemCoders Club in collaboration with Vonage.
+Thank you for contributing to Restaurant Receptionist, a FemCoders Club pilot project developed in collaboration with Vonage.
 
 ## Before you start
 
@@ -11,7 +11,7 @@ Thank you for contributing to Restaurant Receptionist, an educational pilot proj
 
 ## Language
 
-Use English for all repository-facing content: source code, comments, documentation, issues, pull requests, and commit messages. Team conversations take place in Slack.
+Use English for all repository-facing content: source code, comments, documentation, issues, pull requests, and commit messages. Team conversations take place in Spanish in Slack.
 
 ## Branching workflow
 
@@ -19,7 +19,7 @@ Use English for all repository-facing content: source code, comments, documentat
 - `develop` is the integration branch.
 - Start every work branch from the latest `develop` branch.
 - Open pull requests against `develop`.
-- Do not push directly to `main` or `develop`.
+- Contributors must not push directly to `main` or `develop`. The project mentor may make direct updates to either branch for small documentation or repository maintenance changes. Code changes follow the branch and pull request workflow.
 - Only the mentor coordinates merges into `main`.
 
 Use descriptive branch names linked to the assigned issue:

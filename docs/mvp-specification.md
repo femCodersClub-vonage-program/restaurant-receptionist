@@ -2,7 +2,7 @@
 
 ## Status
 
-This is the initial product baseline for an educational proof of concept. It is not a production-ready restaurant system and does not approve an application architecture or technology stack.
+This document defines the initial MVP baseline for a pilot application. The current release is limited to a fictional restaurant and test data; it is not yet intended for production use. It does not prescribe an application architecture or technology stack.
 
 Third-party API contracts, Spanish speech-recognition capability, webhook behaviour, and implementation choices must be verified against current official documentation before development decisions are made.
 
