@@ -4,15 +4,19 @@ This directory contains approved project documentation that should remain useful
 
 ## Available documents
 
-- [MVP specification](mvp-specification.md): product scope, business rules, constraints, and priority scenarios.
+- [MVP specification](mvp-specification.md): product scope, constraints, and priority scenarios.
+- [Business rules](business-rules.md): approved reservation rules and acceptance criteria.
+- [Architecture](architecture.md): high-level components, boundaries, and confirmed technical decisions.
+- [Vonage integration](vonage-integration.md): the intended use of the Vonage APIs and items that still require verification.
+- [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
+- [Specification template](../specs/_template.spec.md): the starting point for an implementation spec linked to an approved issue.
 
 ## Planned documentation
 
-The following documents will be created only after the related decisions are approved:
+The following documentation will be added or expanded after the related decisions are approved:
 
-- Architecture and technology decisions
-- Vonage integration contracts and webhook handling
 - Data model and persistence decisions
+- Verified Vonage API contracts and webhook handling
 - Development, test, and deployment commands
 
 Do not treat proposed technologies or examples in early documents as approved architecture.

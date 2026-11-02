@@ -6,7 +6,7 @@ These instructions apply to coding assistants working in this repository.
 
 Restaurant Receptionist is a FemCoders Club pilot project developed in collaboration with Vonage. It demonstrates a reservation journey for a fictional restaurant: an incoming call, guided data capture, capacity validation, confirmed persistence, a notification request, and a basic staff dashboard.
 
-Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [docs/mvp-specification.md](docs/mvp-specification.md) before proposing implementation changes.
+Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/mvp-specification.md](docs/mvp-specification.md), and [docs/business-rules.md](docs/business-rules.md) before proposing implementation changes.
 
 ## Language and communication
 
@@ -16,8 +16,8 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [docs/mvp-s
 
 ## Scope and decisions
 
-- Do not assume that the technology stack is final.
-- Do not scaffold an application, install dependencies, or introduce an architectural decision without explicit approval.
+- Use the approved stack: Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Docker, Docker Compose, and Testcontainers for integration tests.
+- Do not scaffold an application, install dependencies, change approved tooling, or introduce an architectural decision without explicit approval.
 - Work only within the approved issue scope. Do not add unrelated features or change unrelated files.
 - Propose small, understandable changes and explain relevant trade-offs.
 - Treat the MVP specification as a product baseline, not as confirmation of third-party API contracts.

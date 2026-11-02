@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the initial MVP baseline for a pilot application. The current release is limited to a fictional restaurant and test data; it is not yet intended for production use. It does not prescribe an application architecture or technology stack.
+This document defines the initial MVP baseline for a pilot application. The pilot is time-boxed to approximately six weeks, so the MVP prioritizes a complete and reliable reservation journey over broader restaurant-management features. The MVP uses a fictional restaurant and test data. It may be deployed for demonstration purposes, but it is not intended to handle real customer data or real restaurant reservations. The agreed technology stack is recorded in the [README](../README.md) and [ADR-001](adr/001-initial-technology-stack.md).
 
 Third-party API contracts, Spanish speech-recognition capability, webhook behaviour, and implementation choices must be verified against current official documentation before development decisions are made.
 
@@ -21,8 +21,8 @@ Demonstrate a complete telephone reservation journey for one fictional restauran
 3. Validate the requested time and capacity.
 4. Obtain explicit confirmation from the customer.
 5. Persist the reservation without duplicates or overselling capacity.
-6. Request an RCS or SMS confirmation.
-7. Display the reservation and capacity in a basic staff dashboard.
+6. Request an SMS confirmation.
+7. Display the reservation and capacity in a basic staff dashboard, including manual reservation creation through the same backend validation rules.
 
 ## Scope
 
@@ -38,7 +38,7 @@ Demonstrate a complete telephone reservation journey for one fictional restauran
 - Capacity revalidation and atomic persistence for concurrent reservation attempts.
 - Idempotent handling of repeated webhooks or confirmations.
 - Persistent notification status and error recording.
-- A dashboard that shows reservations by date and service, ordered by arrival time, plus calculated capacity.
+- A dashboard that shows reservations by date and service, ordered by arrival time, plus calculated capacity and manual reservation creation.
 - Tests for the critical business rules.
 
 ### Out of scope for the MVP
@@ -47,10 +47,11 @@ Demonstrate a complete telephone reservation journey for one fictional restauran
 - Table allocation, table rotation, or duration management.
 - Multiple restaurants.
 - Automatic search for alternative dates.
-- Production use, real customer data, or public dashboard access.
+- RCS, Verify API, and Silent Authentication.
+- Use as a real restaurant service, real customer data, or public dashboard access.
 - Login and authentication.
 - Reservation cancellation or modification.
-- Manual reservation creation, retries, RCS-to-SMS fallback, DTMF input, and advanced natural-language date handling.
+- Notification retries, RCS-to-SMS fallback, DTMF input, and advanced natural-language date handling.
 
 ## Business rules
 
@@ -78,7 +79,9 @@ These windows determine the service and are not restaurant closing hours. The in
 ### Capacity
 
 - Each date has independent lunch and dinner capacity.
+- The initial demo capacity is 30 guests for lunch and 30 guests for dinner.
 - Capacity is calculated in guests, not reservations.
+- Party size must be a whole number of at least one guest.
 - Available places equal service capacity minus the sum of guests in confirmed reservations for that date and service.
 - Arrival time does not change capacity within a service.
 - The system must revalidate capacity and persist the reservation atomically before confirming it to the customer.
@@ -106,10 +109,12 @@ The MVP does not automatically search for available dates or offer another time 
 - End the call politely without creating a reservation after the third failed attempt for that field.
 - Do not count a database or external-service failure as a failed customer input attempt.
 - If the caller hangs up before persistence, do not create a reservation. If the caller hangs up after persistence, keep the reservation.
+- A requested arrival time outside both service windows is invalid: explain the valid windows and count it as an invalid attempt for that field.
 
 ### Notifications
 
 - After persistence, request a reservation confirmation through Vonage Messages API.
+- If final capacity revalidation fails, do not persist or confirm the reservation; follow the alternatives flow.
 - A notification failure must not delete or cancel the reservation.
 - Persist the notification's known state and any failure reason.
 - Distinguish a request accepted by Vonage from confirmed delivery to the recipient.
@@ -124,6 +129,11 @@ The dashboard must:
 - Show total, occupied, and available capacity for each service.
 - Calculate capacity on the backend.
 - Support manual refresh; real-time updates are not required.
+- Allow manual reservation creation using the same backend validation and persistence rules as a telephone reservation.
+
+## Detailed business rules
+
+The approved rules RN-01 to RN-07 and their acceptance criteria are maintained in [business-rules.md](business-rules.md). That document is the detailed reference when product scope and implementation choices need to be reconciled.
 
 ## Priority validation scenarios
 
@@ -139,8 +149,7 @@ The dashboard must:
 
 ## Decisions still required
 
-- Technology stack and repository structure.
 - Official Vonage Voice and Messages API contracts, credentials, test numbers, credits, webhooks, and Spanish speech-recognition viability.
 - Interpretation of relative dates, past dates, maximum booking horizon, and a same-day weekday reference.
 - Exact endpoint inclusivity for 13:00, 16:00, 20:00, and 23:30.
-- Data model, integration tests, deployment approach, and post-MVP scope.
+- Customer data model, business-duplicate handling, endpoint contracts, deployment approach, and post-MVP scope.
