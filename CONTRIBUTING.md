@@ -117,7 +117,18 @@ AI can support research, planning, implementation, and review, but it does not r
 
 ## Database migrations
 
-The project uses Flyway for versioned database migrations. Once the backend structure is initialized, all schema changes must be introduced through approved Flyway migrations. The migration naming and coordination policy will be documented before the first migration is created.
+The project uses Flyway for versioned database migrations. Once the backend structure is initialized, all schema changes must be introduced through approved Flyway migrations.
+
+- Name versioned SQL migrations as `V<version>__<lowercase_underscore_description>.sql`.
+- Create a new migration in the same pull request as the code that requires its schema change.
+- Never edit, rename, delete, or reorder a migration after it has been merged. Create a later migration instead.
+- Add the `database` label to the related issue and state the proposed migration filename in both the issue and pull request.
+- Before creating a migration and again before requesting review, update from `develop` and check for version collisions.
+- If two unmerged branches use the same version, the branch merged later must rename its migration after updating from `develop`.
+- The mentor coordinates the merge order of pull requests that contain migrations.
+- Validate migrations against PostgreSQL, including through Testcontainers where applicable.
+
+This manual coordination policy is intentionally proportionate to the current team size and six-week MVP. It will be revisited if recurring collisions show that automation is needed. See [ADR-004](docs/adr/004-adopt-flyway-migration-coordination-policy.md).
 
 ## Definition of Done
 

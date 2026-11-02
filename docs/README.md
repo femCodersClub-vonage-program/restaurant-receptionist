@@ -8,6 +8,7 @@ This directory contains approved project documentation that should remain useful
 - [Business rules](business-rules.md): approved reservation rules and acceptance criteria.
 - [Architecture](architecture.md): high-level components, boundaries, and confirmed technical decisions.
 - [Vonage integration](vonage-integration.md): the intended use of the Vonage APIs and items that still require verification.
+- [Local development setup](setup.md): verified local prerequisites, environment configuration, and run and validation commands.
 - [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
 - [Specification template](../specs/_template.spec.md): the starting point for an implementation spec linked to an approved issue.
 
@@ -17,6 +18,6 @@ The following documentation will be added or expanded after the related decision
 
 - Data model and persistence decisions
 - Verified Vonage API contracts and webhook handling
-- Development, test, and deployment commands
+- Deployment commands
 
 Do not treat proposed technologies or examples in early documents as approved architecture.
