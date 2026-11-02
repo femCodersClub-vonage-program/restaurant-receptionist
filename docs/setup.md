@@ -49,6 +49,8 @@ Copy-Item -LiteralPath '.\.env.example' -Destination '.\.env'
 
 Open `.env` and replace only `POSTGRES_PASSWORD` with a local-only password. Do not use a production credential or put real personal data in this file.
 
+The PowerShell command in this guide reads `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented PowerShell loader interpret it consistently.
+
 The default `POSTGRES_PORT` is `5432`. If that port is already used by a local PostgreSQL installation or another service, choose an available port such as `5433`. The same value is used by Docker Compose and the backend local profile.
 
 Start PostgreSQL:
@@ -64,6 +66,8 @@ Wait until the `postgres` service status is `healthy` before starting the backen
 ```powershell
 docker compose down
 ```
+
+PostgreSQL applies `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` only when it initializes an empty volume. Changing those values later does not update an existing database. Recreating the volume with `docker compose down -v` applies new initialization values, but permanently deletes all local database data; use it only when that deletion is intended.
 
 ## Run the backend locally
 
