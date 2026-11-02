@@ -32,10 +32,30 @@ flowchart LR
 
 ## Confirmed technology choices
 
-The agreed implementation stack is Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Docker, Docker Compose, and Testcontainers for integration tests. See [ADR-001](adr/001-initial-technology-stack.md).
+The agreed implementation stack is Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Docker, Docker Compose, and Testcontainers for integration tests. See [ADR-001](adr/001-initial-technology-stack.md) and [ADR-005](adr/005-pin-initial-runtime-and-tooling-versions.md).
+
+## Development and CI flow
+
+```mermaid
+flowchart LR
+    Developer[Contributor] -->|npm run dev| Frontend[Next.js development server]
+    Developer -->|Spring Boot local profile| Backend[Spring Boot backend]
+    Developer -->|docker compose up| Compose[Docker Compose]
+    Compose --> Database[(PostgreSQL 17.11)]
+    Backend --> Database
+
+    PullRequest[Pull request] --> CI[GitHub Actions CI]
+    CI --> BackendTests[Backend tests with Testcontainers]
+    CI --> FrontendChecks[Frontend: npm ci, lint, build]
+    BackendTests --> TestDatabase[(Isolated PostgreSQL container)]
+```
+
+For local development, Docker Compose provides the PostgreSQL service used by the backend's `local` profile. Backend integration tests use their own isolated PostgreSQL container through Testcontainers instead of the Docker Compose database.
+
+The CI workflow is configured to run the same backend and frontend checks on pull requests and protected branches. Its first remote execution is pending.
 
 ## Decisions still open
 
 - Customer data model and business-duplicate behaviour.
 - Exact API endpoints, webhook payloads, authentication, and Spanish speech-recognition behaviour.
-- Version selection, deployment, CI, and the detailed repository structure.
+- Deployment and branch-protection required CI checks.

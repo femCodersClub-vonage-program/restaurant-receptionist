@@ -9,3 +9,7 @@ Use the [ADR template](_template.md) for new records.
 ## Records
 
 - [ADR-001: Adopt the initial technology stack and development tooling](001-initial-technology-stack.md)
+- [ADR-002: Establish the initial repository layout](002-establish-initial-repository-layout.md)
+- [ADR-003: Separate local database and integration-test environments](003-separate-local-database-and-integration-test-environments.md)
+- [ADR-004: Adopt the Flyway migration coordination policy](004-adopt-flyway-migration-coordination-policy.md)
+- [ADR-005: Pin the initial runtime and tooling versions](005-pin-initial-runtime-and-tooling-versions.md)

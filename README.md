@@ -27,20 +27,20 @@ The MVP excludes conversational AI, table allocation, multiple restaurants, RCS,
 
 ## Technology stack
 
-| Area | Technology |
+| Area | Technology and initial version |
 | --- | --- |
-| Backend | Java 21, Spring Boot, Maven |
-| Data | PostgreSQL, Spring Data JPA / Hibernate, Flyway |
-| Frontend | Next.js, Tailwind CSS |
+| Backend | Java 21, Spring Boot 4.1.2, Maven Wrapper |
+| Data | PostgreSQL 17.11, Spring Data JPA / Hibernate, Flyway |
+| Frontend | Node.js 22 LTS, npm 10, Next.js 16.4.4, Tailwind CSS |
 | Local environment | Docker, Docker Compose |
 | Testing | Testcontainers for integration tests |
 | Communications | Vonage Voice API and Vonage Messages API (SMS) |
 
-Exact versions, API contracts, deployment and CI decisions will be recorded as they are approved.
+Framework-managed library versions, API contracts, deployment and CI configuration are recorded as they are approved. See [ADR-005](docs/adr/005-pin-initial-runtime-and-tooling-versions.md) for the initial version policy.
 
 ## Project status
 
-Repository setup and team onboarding are in progress. Application scaffolding has not been initialized.
+Initial technical setup is in progress. The backend and frontend scaffolding, local PostgreSQL configuration, and verified local commands are available. The initial CI workflow awaits its first GitHub execution. No product feature has been implemented yet.
 
 ## Clone the repository
 
@@ -49,7 +49,7 @@ git clone https://github.com/femCodersClub-vonage-program/restaurant-receptionis
 cd restaurant-receptionist
 ```
 
-Local setup and run instructions will be added when the application structure and development environment are configured.
+Follow the verified [local development setup guide](docs/setup.md) to configure PostgreSQL, run the backend and frontend, and execute the checks.
 
 ## Contributing
 
@@ -61,6 +61,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. Contributors work f
 - [Business rules](docs/business-rules.md)
 - [Architecture](docs/architecture.md)
 - [Vonage integration](docs/vonage-integration.md)
+- [Local development setup](docs/setup.md)
 - [Security policy](SECURITY.md)
 - [Documentation index](docs/README.md)
 - [AI agent instructions](AGENTS.md)
