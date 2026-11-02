@@ -52,7 +52,7 @@ flowchart LR
 
 For local development, Docker Compose provides the PostgreSQL service used by the backend's `local` profile. Backend integration tests use their own isolated PostgreSQL container through Testcontainers instead of the Docker Compose database.
 
-The CI workflow is configured to run the same backend and frontend checks on pull requests and protected branches. Its first remote execution is pending.
+The CI workflow runs the same backend and frontend checks on pull requests and protected branches.
 
 ## Decisions still open
 

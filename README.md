@@ -40,7 +40,7 @@ Framework-managed library versions, API contracts, deployment and CI configurati
 
 ## Project status
 
-Initial technical setup is in progress. The backend and frontend scaffolding, local PostgreSQL configuration, and verified local commands are available. The initial CI workflow awaits its first GitHub execution. No product feature has been implemented yet.
+Initial technical setup is complete. The backend and frontend scaffolding, local PostgreSQL configuration, verified local commands, and GitHub Actions CI are available. No product feature has been implemented yet.
 
 ## Clone the repository
 
