@@ -28,6 +28,7 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/mvp-speci
 - Only the project mentor creates GitHub issues.
 - Do not create branches, commits, pull requests, merges, releases, or repository configuration changes without explicit authorization from the mentor.
 - Before significant changes, explain what will change and why.
+- When asked to review a pull request, read and follow the applicable read-only profile in [`.agents/`](.agents/README.md). These profiles guide evidence-based review; they do not replace human approval or required CI checks.
 
 ## Vonage integration
 

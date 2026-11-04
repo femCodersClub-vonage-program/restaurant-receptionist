@@ -12,6 +12,7 @@ This directory contains approved project documentation that should remain useful
 - [Local development setup](setup.md): verified local prerequisites, environment configuration, and run and validation commands.
 - [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
 - [Specification template](../specs/_template.spec.md): the starting point for an implementation spec linked to an approved issue.
+- [Pull request review profiles](../.agents/README.md): read-only review guidance for documentation, UI/UX, accessibility, and design-system changes.
 
 ## Planned documentation
 
