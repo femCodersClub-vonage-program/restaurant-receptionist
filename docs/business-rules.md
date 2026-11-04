@@ -26,22 +26,25 @@ This document records the approved functional rules for the Restaurant Reception
 | Lunch | 13:00–16:00 |
 | Dinner | 20:00–23:30 |
 
-- These are reservation arrival windows, not restaurant closing hours.
+- These are reservation arrival windows, not restaurant closing hours. Both endpoints are inclusive: lunch accepts arrival times from 13:00 through 16:00, and dinner accepts arrival times from 20:00 through 23:30. Arrival times use minute precision.
 - The stored arrival time identifies the service but does not change capacity within that service.
 - A requested time outside both windows is invalid. Explain the valid windows and treat the value as an invalid input attempt for the arrival-time field.
-- Whether the endpoints are inclusive remains to be confirmed during implementation.
+- The fictional restaurant uses the `Europe/Madrid` time zone. A reservation date must be today or a future date in that time zone.
+- For a reservation on the current local date, the arrival time must be strictly later than the current local time. A time that is current or already passed is invalid.
 
 ## RN-04: Confirmation and corrections
 
 - Before persistence, read the captured details to the caller and require an explicit affirmative confirmation.
 - When the caller requests a correction, ask which single field must change and capture only that value.
 - Revalidate service hours and availability whenever date, time, or party size changes.
+- Revalidate date and time validity whenever the date or arrival time changes.
 - Read the updated summary and request confirmation again.
 - Do not persist a reservation without final confirmation.
 
 ## RN-05: Errors, attempts, and abandonment
 
 - Allow one initial question and up to two retries for each field after silence, an unrecognised response, or an invalid value.
+- Treat a past reservation date or a same-day arrival time that is current or already passed as an invalid input for the relevant field.
 - End the call politely without creating a reservation after the third failed attempt for that field.
 - Do not count a database, backend, or external-service failure as a failed customer-input attempt.
 - If the caller hangs up before persistence, do not create a reservation. If the caller hangs up after persistence, retain the reservation.
@@ -85,8 +88,7 @@ This document records the approved functional rules for the Restaurant Reception
 
 The following items are intentionally open and must not be implemented from assumptions:
 
-- Restaurant time zone, past-date handling, same-day times that have already passed, and maximum booking horizon.
-- Whether arrival-window endpoints are inclusive.
+- Maximum booking horizon.
 - Phone-number collection and confirmation policy, including hidden caller IDs and numbers that cannot receive SMS.
 - Limits for valid correction rounds and unsuccessful availability-alternative rounds.
 - Customer data model and business-duplicate behaviour, which are distinct from technical idempotency for repeated webhooks.

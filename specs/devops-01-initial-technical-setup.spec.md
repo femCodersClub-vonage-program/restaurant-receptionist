@@ -1,7 +1,7 @@
 # Spec: Initial technical setup
 
 > Issue: [#1](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/1) (`devops-01`) | Branch: `chore/devops-01-initial-technical-setup`
-> Status: `in-progress`
+> Status: `done`
 > Last updated: 2026-11-02
 
 ---

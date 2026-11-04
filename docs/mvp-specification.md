@@ -65,6 +65,12 @@ Each reservation captures:
 - Arrival time.
 - Party size.
 
+### Date and time validity
+
+- The fictional restaurant uses the `Europe/Madrid` time zone.
+- A reservation date must be today or a future date in that time zone.
+- For a reservation on the current local date, the arrival time must be strictly later than the current local time. A time that is current or already passed is invalid.
+
 ### Service hours
 
 The initial fictional restaurant schedule is:
@@ -74,7 +80,7 @@ The initial fictional restaurant schedule is:
 | Lunch | 13:00–16:00 |
 | Dinner | 20:00–23:30 |
 
-These windows determine the service and are not restaurant closing hours. The inclusivity of the endpoints must be confirmed during implementation.
+These windows determine the service and are not restaurant closing hours. Both endpoints are inclusive: lunch accepts arrival times from 13:00 through 16:00, and dinner accepts arrival times from 20:00 through 23:30. Arrival times use minute precision.
 
 ### Capacity
 
@@ -150,6 +156,5 @@ The approved rules RN-01 to RN-07 and their acceptance criteria are maintained i
 ## Decisions still required
 
 - Official Vonage Voice and Messages API contracts, credentials, test numbers, credits, webhooks, and Spanish speech-recognition viability.
-- Interpretation of relative dates, past dates, maximum booking horizon, and a same-day weekday reference.
-- Exact endpoint inclusivity for 13:00, 16:00, 20:00, and 23:30.
+- Interpretation of relative dates, maximum booking horizon, and a same-day weekday reference.
 - Customer data model, business-duplicate handling, endpoint contracts, deployment approach, and post-MVP scope.

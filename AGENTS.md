@@ -16,7 +16,7 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/mvp-speci
 
 ## Scope and decisions
 
-- Use the approved stack: Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Docker, Docker Compose, and Testcontainers for integration tests.
+- Use the approved stack: Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Lucide React, Docker, Docker Compose, and Testcontainers for integration tests.
 - Do not scaffold an application, install dependencies, change approved tooling, or introduce an architectural decision without explicit approval.
 - Work only within the approved issue scope. Do not add unrelated features or change unrelated files.
 - Propose small, understandable changes and explain relevant trade-offs.

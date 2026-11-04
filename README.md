@@ -31,7 +31,7 @@ The MVP excludes conversational AI, table allocation, multiple restaurants, RCS,
 | --- | --- |
 | Backend | Java 21, Spring Boot 4.1.2, Maven Wrapper |
 | Data | PostgreSQL 17.11, Spring Data JPA / Hibernate, Flyway |
-| Frontend | Node.js 22 LTS, npm 10, Next.js 16.4.4, Tailwind CSS |
+| Frontend | Node.js 22 LTS, npm 10, Next.js 16.4.4, Tailwind CSS, Lucide React |
 | Local environment | Docker, Docker Compose |
 | Testing | Testcontainers for integration tests |
 | Communications | Vonage Voice API and Vonage Messages API (SMS) |
@@ -60,6 +60,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. Contributors work f
 - [MVP specification](docs/mvp-specification.md)
 - [Business rules](docs/business-rules.md)
 - [Architecture](docs/architecture.md)
+- [Design system](docs/design-system.md)
 - [Vonage integration](docs/vonage-integration.md)
 - [Local development setup](docs/setup.md)
 - [Security policy](SECURITY.md)

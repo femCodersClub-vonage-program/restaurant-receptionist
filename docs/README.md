@@ -7,6 +7,7 @@ This directory contains approved project documentation that should remain useful
 - [MVP specification](mvp-specification.md): product scope, constraints, and priority scenarios.
 - [Business rules](business-rules.md): approved reservation rules and acceptance criteria.
 - [Architecture](architecture.md): high-level components, boundaries, and confirmed technical decisions.
+- [Design system](design-system.md): approved Clean UI tokens, reusable components, and accessibility baseline.
 - [Vonage integration](vonage-integration.md): the intended use of the Vonage APIs and items that still require verification.
 - [Local development setup](setup.md): verified local prerequisites, environment configuration, and run and validation commands.
 - [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
