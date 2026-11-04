@@ -46,7 +46,8 @@ Implement a backend application service that derives the service from a valid ar
 - Related ADRs: [ADR-003](../docs/adr/003-separate-local-database-and-integration-test-environments.md)
 - Open questions or assumptions:
   - Arrival times use minute precision. The service is derived by the backend from the arrival time; callers must not supply a separate service value.
-  - Restaurant time zone, past-date handling, and booking horizon are not part of this calculation yet.
+  - Reservation date and time validity, including the `Europe/Madrid` time zone and past-date handling, are enforced by `reservations-01`; this availability service focuses on service classification and capacity.
+  - Maximum booking horizon is not part of this calculation yet.
 
 ## Technical design
 

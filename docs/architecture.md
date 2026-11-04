@@ -32,7 +32,7 @@ flowchart LR
 
 ## Confirmed technology choices
 
-The agreed implementation stack is Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Docker, Docker Compose, and Testcontainers for integration tests. See [ADR-001](adr/001-initial-technology-stack.md) and [ADR-005](adr/005-pin-initial-runtime-and-tooling-versions.md).
+The agreed implementation stack is Java 21, Spring Boot, Maven, PostgreSQL, Spring Data JPA / Hibernate, Flyway, Next.js, Tailwind CSS, Lucide React, Docker, Docker Compose, and Testcontainers for integration tests. See [ADR-001](adr/001-initial-technology-stack.md) and [ADR-005](adr/005-pin-initial-runtime-and-tooling-versions.md).
 
 ## Development and CI flow
 
