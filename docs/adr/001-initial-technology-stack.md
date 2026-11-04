@@ -17,7 +17,7 @@ The project will use:
 - PostgreSQL for persistence.
 - Spring Data JPA / Hibernate for data access.
 - Flyway for versioned database migrations.
-- Next.js and Tailwind CSS for the staff dashboard.
+- Next.js, Tailwind CSS, and Lucide React for the staff dashboard.
 - Docker and Docker Compose for the local environment.
 - Testcontainers for PostgreSQL-backed integration tests.
 - Vonage Voice API and Vonage Messages API for the agreed communication flows.
