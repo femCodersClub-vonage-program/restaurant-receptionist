@@ -65,6 +65,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. Contributors work f
 - [Local development setup](docs/setup.md)
 - [Security policy](SECURITY.md)
 - [Documentation index](docs/README.md)
+- [Pull request review profiles](.agents/README.md)
 - [AI agent instructions](AGENTS.md)
 
 ## Team

@@ -85,6 +85,17 @@ The mentor reviews contributors' pull requests. After approval and completion of
 
 The mentor may merge her own pull requests after a documented self-review when the repository rules permit it; GitHub does not count an author's own approval as an independent approving review.
 
+## Review profiles
+
+The read-only profiles in [`.agents/`](.agents/README.md) make reviews consistent without replacing human judgement, required CI checks, or branch protection.
+
+- Apply [`docs-reviewer`](.agents/docs-reviewer.md) to every pull request.
+- Apply [`ui-reviewer`](.agents/ui-reviewer.md), [`accessibility-reviewer`](.agents/accessibility-reviewer.md), and [`design-system-reviewer`](.agents/design-system-reviewer.md) when a pull request changes a user-facing frontend flow, component, interaction, or visual style.
+- Before opening a pull request for review, or marking a draft pull request ready for review, the author runs every applicable profile on their branch. The author resolves blocking findings first and reruns the relevant profile after the correction.
+- The pull request author identifies the applicable profiles in the pull request template and records the final result in the pull request conversation. A result of `Ready for approval` may proceed to mentor review; `Requires changes` must be resolved first. When a profile reports `Not verifiable`, state what could not be checked and why.
+- Resolve blocking findings before merge. Resolve important findings before merge unless the mentor records a reasoned exception. Suggestions do not block a pull request.
+- A profile can report that a check was not verifiable. Do not claim a successful runtime result without evidence.
+
 ## Testing and validation
 
 Acceptance criteria in the spec are the starting point for validation.
