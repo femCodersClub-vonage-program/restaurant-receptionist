@@ -34,17 +34,30 @@ The backend uses Maven Wrapper, so a separately installed Maven version is not r
 
 ## Clone the repository
 
+**Windows (PowerShell):**
 ```powershell
 git clone https://github.com/femCodersClub-vonage-program/restaurant-receptionist.git
 Set-Location restaurant-receptionist
+```
+
+**MacOS (Terminal):**
+```bash
+git clone https://github.com/femCodersClub-vonage-program/restaurant-receptionist.git
+cd restaurant-receptionist
 ```
 
 ## Configure local PostgreSQL
 
 Copy the committed example file. The resulting `.env` file is ignored by Git and must never be committed or shared.
 
+**Windows (PowerShell):**
 ```powershell
 Copy-Item -LiteralPath '.\.env.example' -Destination '.\.env'
+```
+
+**MacOS (Terminal):**
+```bash
+cp .env.example .env
 ```
 
 Open `.env` and replace only `POSTGRES_PASSWORD` with a local-only password. Do not use a production credential or put real personal data in this file.
@@ -55,6 +68,7 @@ The default `POSTGRES_PORT` is `5432`. If that port is already used by a local P
 
 Start PostgreSQL:
 
+**For both Windows and macOS**:
 ```powershell
 docker compose config --quiet
 docker compose up -d
@@ -63,6 +77,7 @@ docker compose ps
 
 Wait until the `postgres` service status is `healthy` before starting the backend. To stop the local service while retaining its data volume:
 
+**For both Windows and macOS:**
 ```powershell
 docker compose down
 ```
@@ -71,8 +86,9 @@ PostgreSQL applies `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` only 
 
 ## Run the backend locally
 
-Docker Compose reads `.env` automatically. A Spring Boot process started directly from PowerShell does not, so load the variables into the current PowerShell session first:
+Docker Compose reads `.env` automatically. A Spring Boot process started directly from a shell does not, so load the variables into the current shell session first:
 
+**Windows (PowerShell):**
 ```powershell
 Get-Content -LiteralPath '.\.env' |
   Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') } |
@@ -84,23 +100,48 @@ Get-Content -LiteralPath '.\.env' |
 $env:SPRING_PROFILES_ACTIVE = 'local'
 ```
 
+**macOS (Terminal):**
+```bash
+while IFS='=' read -r key value; do
+  [[ -z "$key" || "$key" =~ ^# ]] && continue
+  key=$(echo "$key" | xargs)
+  value=$(echo "$value" | xargs)
+  export "$key"="$value"
+done < .env
+
+export SPRING_PROFILES_ACTIVE='local'
+```
+
 Then start the backend:
 
+**Windows (PowerShell):**
 ```powershell
 Set-Location .\backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
+**MacOS (Terminal):**
+```bash
+cd backend
+set -a; source ../.env; set +a
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
 
-The backend starts at `http://localhost:8080`. The initial setup intentionally exposes no product endpoints. Stop the process with `Ctrl+C`.
+The backend starts at `http://localhost:8080`. The initial setup intentionally exposes no product endpoints, so there are no application routes to use yet. Stop the process with `Ctrl+C` on both Windows and macOS.
 
-Every new PowerShell session needs the environment-loading step again before starting the backend with the `local` profile.
+Every new PowerShell or macOS Terminal session needs the environment-loading step again before starting the backend with the `local` profile.
 
 ## Run backend tests
 
 From `backend/`, run:
 
+**Windows (PowerShell):**
 ```powershell
 .\mvnw.cmd test
+```
+
+**MacOS (Terminal):**
+```bash
+./mvnw test
 ```
 
 The integration test uses Testcontainers and a separate PostgreSQL container. It does not use the PostgreSQL instance started by Docker Compose, but Docker Desktop must be running.
@@ -109,8 +150,16 @@ The integration test uses Testcontainers and a separate PostgreSQL container. It
 
 From the repository root, install locked dependencies and start Next.js:
 
+**Windows (PowerShell):**
 ```powershell
 Set-Location .\frontend
+npm ci
+npm run dev
+```
+
+**MacOS (Terminal):**
+```bash
+cd frontend/
 npm ci
 npm run dev
 ```
@@ -119,6 +168,7 @@ Open `http://localhost:3000`. Stop the development server with `Ctrl+C`.
 
 Validate the frontend before opening a pull request:
 
+**For both Windows and macOS:**
 ```powershell
 npm run lint
 npm run build
