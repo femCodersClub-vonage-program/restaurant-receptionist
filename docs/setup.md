@@ -1,6 +1,6 @@
 # Local development setup
 
-This guide describes the initial technical setup for Restaurant Receptionist. It contains commands verified on Windows 11. macOS and Linux equivalents have not yet been verified by the team.
+This guide describes the initial technical setup for Restaurant Receptionist. It contains commands verified on Windows 11 and macOS Sequoia. Linux equivalents have not yet been verified by the team.
 
 The project has two independently runnable applications:
 
@@ -62,7 +62,7 @@ cp .env.example .env
 
 Open `.env` and replace only `POSTGRES_PASSWORD` with a local-only password. Do not use a production credential or put real personal data in this file.
 
-The PowerShell command in this guide reads `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented PowerShell loader interpret it consistently.
+The PowerShell and Terminal commands in this guide read `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented PowerShell loader interpret it consistently.
 
 The default `POSTGRES_PORT` is `5432`. If that port is already used by a local PostgreSQL installation or another service, choose an available port such as `5433`. The same value is used by Docker Compose and the backend local profile.
 
@@ -86,7 +86,7 @@ PostgreSQL applies `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` only 
 
 ## Run the backend locally
 
-Docker Compose reads `.env` automatically. A Spring Boot process started directly from a shell does not, so load the variables into the current shell session first:
+Docker Compose reads `.env` automatically. A Spring Boot process started directly from a shell or terminal does not, so load the variables into the current shell/terminal session first:
 
 **Windows (PowerShell):**
 ```powershell
@@ -102,13 +102,9 @@ $env:SPRING_PROFILES_ACTIVE = 'local'
 
 **macOS (Terminal):**
 ```bash
-while IFS='=' read -r key value; do
-  [[ -z "$key" || "$key" =~ ^# ]] && continue
-  key=$(echo "$key" | xargs)
-  value=$(echo "$value" | xargs)
-  export "$key"="$value"
-done < .env
-
+set -a
+source ./.env
+set +a
 export SPRING_PROFILES_ACTIVE='local'
 ```
 
@@ -119,16 +115,16 @@ Then start the backend:
 Set-Location .\backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
+
 **MacOS (Terminal):**
 ```bash
 cd backend
-set -a; source ../.env; set +a
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 The backend starts at `http://localhost:8080`. The initial setup intentionally exposes no product endpoints, so there are no application routes to use yet. Stop the process with `Ctrl+C` on both Windows and macOS.
 
-Every new PowerShell or macOS Terminal session needs the environment-loading step again before starting the backend with the `local` profile.
+The environment-loading commands must be repeated in every new PowerShell or macOS Terminal session before starting the backend with the `local` profile. The variables are available only for the current shell/terminal session.
 
 ## Run backend tests
 
@@ -176,16 +172,16 @@ npm run build
 
 ## Environment and security notes
 
-- The root `.env` configures Docker Compose. It is not automatically read by Spring Boot when the backend runs directly from PowerShell.
+- The root `.env` configures Docker Compose. It is not automatically read by Spring Boot when the backend runs directly from PowerShell or macOS Terminal. Therefore, the environment variables must be loaded again in each new shell or terminal session before starting the backend.
 - Do not create a frontend environment file until the frontend has an approved API configuration requirement. Frontend environment files must never contain database, Vonage, or backend secrets.
 - Do not run `npm audit fix` or upgrade dependencies automatically. Review and approve dependency changes through an issue and pull request.
 - Do not commit `.env`, credentials, tokens, private keys, phone numbers, or real personal data. See the [Security Policy](../SECURITY.md).
 
 ## Verified commands
 
-The following initial checks have been completed on Windows 11:
+The following initial checks have been completed on Windows 11 and on macOS Sequoia 15.6.1:
 
-- Backend integration test: `.\mvnw.cmd test`
+- Backend integration test: `.\mvnw.cmd test` (Poswershell) or `./mvnw test` (Terminal)
 - Backend local startup against Docker Compose PostgreSQL 17.11
 - Frontend lint: `npm run lint`
 - Frontend production build: `npm run build`
