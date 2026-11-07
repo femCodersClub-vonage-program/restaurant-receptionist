@@ -181,7 +181,7 @@ npm run build
 
 The following initial checks have been completed on Windows 11 and on macOS Sequoia 15.6.1:
 
-- Backend integration test: `.\mvnw.cmd test` (Poswershell) or `./mvnw test` (Terminal)
+- Backend integration test: `.\mvnw.cmd test` (PowerShell) or `./mvnw test` (Terminal)
 - Backend local startup against Docker Compose PostgreSQL 17.11
 - Frontend lint: `npm run lint`
 - Frontend production build: `npm run build`
