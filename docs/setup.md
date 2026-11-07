@@ -40,7 +40,7 @@ git clone https://github.com/femCodersClub-vonage-program/restaurant-receptionis
 Set-Location restaurant-receptionist
 ```
 
-**MacOS (Terminal):**
+**macOS (Terminal):**
 ```bash
 git clone https://github.com/femCodersClub-vonage-program/restaurant-receptionist.git
 cd restaurant-receptionist
@@ -55,14 +55,14 @@ Copy the committed example file. The resulting `.env` file is ignored by Git and
 Copy-Item -LiteralPath '.\.env.example' -Destination '.\.env'
 ```
 
-**MacOS (Terminal):**
+**macOS (Terminal):**
 ```bash
 cp .env.example .env
 ```
 
 Open `.env` and replace only `POSTGRES_PASSWORD` with a local-only password. Do not use a production credential or put real personal data in this file.
 
-The PowerShell and Terminal commands in this guide read `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented PowerShell loader interpret it consistently.
+The PowerShell and Terminal commands in this guide read `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented loaders interpret it consistently.
 
 The default `POSTGRES_PORT` is `5432`. If that port is already used by a local PostgreSQL installation or another service, choose an available port such as `5433`. The same value is used by Docker Compose and the backend local profile.
 
@@ -116,7 +116,7 @@ Set-Location .\backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-**MacOS (Terminal):**
+**macOS (Terminal):**
 ```bash
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
@@ -135,7 +135,7 @@ From `backend/`, run:
 .\mvnw.cmd test
 ```
 
-**MacOS (Terminal):**
+**macOS (Terminal):**
 ```bash
 ./mvnw test
 ```
@@ -153,7 +153,7 @@ npm ci
 npm run dev
 ```
 
-**MacOS (Terminal):**
+**macOS (Terminal):**
 ```bash
 cd frontend/
 npm ci
