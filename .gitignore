@@ -9,3 +9,6 @@
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Private mentor planning notes (local only)
+.mentor/
