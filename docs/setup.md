@@ -62,7 +62,7 @@ cp .env.example .env
 
 Open `.env` and replace only `POSTGRES_PASSWORD` with a local-only password. Do not use a production credential or put real personal data in this file.
 
-The PowerShell and Terminal commands in this guide read `.env` as simple `KEY=value` pairs. Use an unquoted password without spaces, quotation marks, or `#` so Docker Compose and the documented loaders interpret it consistently.
+The commands for both PowerShell (Windows) and Terminal (macOS) provided in this guide treat the `.env` file as a series of simple `KEY=value` pairs. When following the instructions for both PowerShell (Windows) or Terminal (macOS), the `POSTGRES_PASSWORD` must be a string containing no quotation marks, no spaces, and none of the following characters: `#`, `$`, backticks, `!`, `;`, `&`, or `|`. Since the loader on macOS uses the `source` command, these special shell characters could otherwise be expanded or interpreted by the terminal. Therefore, to ensure consistency, use this same restricted format for the password in Docker Compose, as well as in the instructions for PowerShell (Windows) and Terminal (macOS).
 
 The default `POSTGRES_PORT` is `5432`. If that port is already used by a local PostgreSQL installation or another service, choose an available port such as `5433`. The same value is used by Docker Compose and the backend local profile.
 
