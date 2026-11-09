@@ -20,7 +20,7 @@ flowchart LR
 | --- | --- |
 | Vonage Voice API | Receives the reservation call and exchanges call events with the backend. |
 | Spring Boot backend | Applies reservation rules, validates capacity, persists confirmed reservations, receives webhooks, and requests notifications. |
-| PostgreSQL | Stores the data required by the MVP, including reservations and notification status. The detailed data model remains pending. |
+| PostgreSQL | Stores the data required by the MVP, including reservations and notification status. The notification data model remains pending. |
 | Vonage Messages API | Requests SMS confirmations after a reservation has been persisted. |
 | Next.js dashboard | Lets staff view capacity and reservations and create manual reservations through the backend API. |
 
