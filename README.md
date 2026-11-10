@@ -40,7 +40,7 @@ Framework-managed library versions, API contracts, deployment and CI configurati
 
 ## Project status
 
-Initial technical setup is complete. The backend and frontend scaffolding, local PostgreSQL configuration, verified local commands, and GitHub Actions CI are available. No product feature has been implemented yet.
+Initial technical setup is complete. The backend and frontend scaffolding, local PostgreSQL configuration, verified local commands, and GitHub Actions CI are available. The initial confirmed-reservation persistence model is implemented; reservation workflows, capacity management, notifications, and dashboard integration remain future work.
 
 ## Clone the repository
 
