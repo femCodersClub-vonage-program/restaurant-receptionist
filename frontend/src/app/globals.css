@@ -80,6 +80,7 @@
   ::before,
   ::after {
     border-color: var(--color-border);
+    outline-color: var(--color-primary);
   }
 
   :focus-visible {
