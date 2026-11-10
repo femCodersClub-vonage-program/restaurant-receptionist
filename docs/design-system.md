@@ -20,23 +20,23 @@ Use a clean, calm, operational interface:
 
 ### Colour tokens
 
-| Token purpose | Value | Use |
-| --- | --- | --- |
-| Primary | `#075B60` | Primary actions, active controls, and key interactive emphasis. |
-| Background | `#F7F8FB` | Application background. |
-| Surface | `#FFFFFF` | Cards, panels, menus, and form surfaces. |
-| Primary text | `#111827` | Headings and essential content. |
-| Secondary text | `#374151` | Supporting content and labels. |
-| Border | `#E5E7EB` | Quiet boundaries and dividers. |
-| Selection | `#E8F3F3` | Selected or subtle active surfaces. |
-| Success text | `#14532D` | Success status text. |
-| Success surface | `#E7F6EC` | Success status background. |
-| Error text | `#991B1B` | Error text. |
-| Error surface | `#FEF2F2` | Error background. |
-| Warning text | `#713F12` | Warning text. |
-| Warning surface | `#FEF9E7` | Warning background. |
+| Token purpose | Token | Value | Use |
+| --- | --- | --- | --- |
+| Primary | `primary` | `#075B60` | Primary actions, active controls, and key interactive emphasis. |
+| Background | `background` | `#F7F8FB` | Application background. |
+| Surface | `surface` | `#FFFFFF` | Cards, panels, menus, and form surfaces. |
+| Primary text | `foreground` | `#111827` | Headings and essential content. |
+| Secondary text | `foreground-muted` | `#374151` | Supporting content and labels. |
+| Border | `border` | `#E5E7EB` | Quiet boundaries and dividers. |
+| Selection | `selection` | `#E8F3F3` | Selected or subtle active surfaces. |
+| Success text | `success` | `#14532D` | Success status text. |
+| Success surface | `success-surface` | `#E7F6EC` | Success status background. |
+| Error text | `error` | `#991B1B` | Error text. |
+| Error surface | `error-surface` | `#FEF2F2` | Error background. |
+| Warning text | `warning` | `#713F12` | Warning text. |
+| Warning surface | `warning-surface` | `#FEF9E7` | Warning background. |
 
-Use semantic token names in code, not repeated raw hexadecimal values. Do not communicate status through colour alone.
+Tokens are defined once in `frontend/src/app/globals.css` and exposed as Tailwind CSS utilities, for example `bg-primary`, `text-foreground-muted`, and `border-border`. Always pair a state text token with its own surface, for example `text-error bg-error-surface`. Use semantic token names in code, not repeated raw hexadecimal values. Do not communicate status through colour alone.
 
 ### Typography
 
@@ -46,6 +46,16 @@ Use the system font stack for the MVP. A hosted custom font is not required.
 - Labels and supporting text remain legible; do not reduce essential content to decorative microcopy.
 - Use consistent weights and line heights rather than introducing one-off typography styles.
 
+| Token | Size | Line height | Weight | Use |
+| --- | --- | --- | --- | --- |
+| `label` | 14 px | 20 px | 500 | Form labels, badges, and table headers. |
+| `body` | 16 px | 24 px | 400 | Default body text. |
+| `heading-sm` | 18 px | 24 px | 600 | Card and small section titles. |
+| `heading-md` | 24 px | 32 px | 600 | Dashboard section titles. |
+| `heading-lg` | 30 px | 36 px | 700 | Page title. |
+
+Each utility, for example `text-heading-md`, applies size, line height, and weight together; do not add separate weight or line-height utilities. Values are defined in `rem` so text scales with the user's browser font size.
+
 ### Spacing
 
 Use this fixed spacing scale:
@@ -54,11 +64,23 @@ Use this fixed spacing scale:
 4, 8, 12, 16, 24, 32, 48 px
 ```
 
+| Utility key | Value |
+| --- | --- |
+| `1` | 4 px |
+| `2` | 8 px |
+| `3` | 12 px |
+| `4` | 16 px |
+| `6` | 24 px |
+| `8` | 32 px |
+| `12` | 48 px |
+
+The scale is closed: only these keys, plus `0`, exist for spacing and sizing utilities such as `p-4`, `gap-6`, or `h-12`. Other numeric keys, for example `p-5`, generate no CSS. Do not bypass the scale with arbitrary values such as `p-[20px]`.
+
 ### Borders and shadows
 
-- Use 8 px or 12 px radii.
-- Use the border token for quiet visual separation.
-- Use subtle shadows only for raised surfaces when a border alone is insufficient.
+- Use `rounded-control` (8 px) for controls such as buttons, inputs, selects, and badges, and `rounded-surface` (12 px) for bounded surfaces such as cards, panels, and alerts.
+- Use the `border` token for quiet visual separation; it is the default border colour, so a plain `border` utility applies it.
+- Use `shadow-raised`, the only shadow token, for raised surfaces when a border alone is insufficient.
 - Avoid heavy shadows, excessive rounding, gradients, and decorative visual noise.
 
 ### Focus and interaction
