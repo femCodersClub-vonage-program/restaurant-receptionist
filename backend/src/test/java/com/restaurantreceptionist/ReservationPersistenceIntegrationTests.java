@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.restaurantreceptionist.reservations.Reservation;
 import com.restaurantreceptionist.reservations.ReservationRepository;
-import com.restaurantreceptionist.reservations.ReservationService;
+import com.restaurantreceptionist.reservations.DiningSession;
 import com.restaurantreceptionist.reservations.ReservationStatus;
 
 @Import(TestcontainersConfiguration.class)
@@ -52,7 +52,7 @@ class ReservationPersistenceIntegrationTests {
 				"fictional-test-contact",
 				LocalDate.of(2027, 5, 14),
 				LocalTime.of(13, 30),
-				ReservationService.LUNCH,
+				DiningSession.LUNCH,
 				(short) 4);
 
 		var savedReservation = reservationRepository.saveAndFlush(reservation);
@@ -63,7 +63,7 @@ class ReservationPersistenceIntegrationTests {
 		assertThat(retrievedReservation.getPhoneNumber()).isEqualTo("fictional-test-contact");
 		assertThat(retrievedReservation.getReservationDate()).isEqualTo(LocalDate.of(2027, 5, 14));
 		assertThat(retrievedReservation.getArrivalTime()).isEqualTo(LocalTime.of(13, 30));
-		assertThat(retrievedReservation.getService()).isEqualTo(ReservationService.LUNCH);
+		assertThat(retrievedReservation.getDiningSession()).isEqualTo(DiningSession.LUNCH);
 		assertThat(retrievedReservation.getPartySize()).isEqualTo((short) 4);
 		assertThat(retrievedReservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(retrievedReservation.getCreatedAt()).isNotNull();
@@ -72,15 +72,15 @@ class ReservationPersistenceIntegrationTests {
 	@Test
 	void findsReservationsForDateAndServiceOrderedByArrivalTime() {
 		var date = LocalDate.of(2027, 5, 14);
-		var earlyLunch = reservation(date, LocalTime.of(13, 15), ReservationService.LUNCH, (short) 2);
-		var lateLunch = reservation(date, LocalTime.of(15, 45), ReservationService.LUNCH, (short) 3);
-		var dinner = reservation(date, LocalTime.of(20, 30), ReservationService.DINNER, (short) 2);
-		var otherDate = reservation(date.plusDays(1), LocalTime.of(13, 0), ReservationService.LUNCH, (short) 2);
+		var earlyLunch = reservation(date, LocalTime.of(13, 15), DiningSession.LUNCH, (short) 2);
+		var lateLunch = reservation(date, LocalTime.of(15, 45), DiningSession.LUNCH, (short) 3);
+		var dinner = reservation(date, LocalTime.of(20, 30), DiningSession.DINNER, (short) 2);
+		var otherDate = reservation(date.plusDays(1), LocalTime.of(13, 0), DiningSession.LUNCH, (short) 2);
 
 		reservationRepository.saveAllAndFlush(List.of(lateLunch, dinner, otherDate, earlyLunch));
 
-		assertThat(reservationRepository.findAllByReservationDateAndServiceOrderByArrivalTimeAsc(
-				date, ReservationService.LUNCH))
+		assertThat(reservationRepository.findAllByReservationDateAndDiningSessionOrderByArrivalTimeAsc(
+				date, DiningSession.LUNCH))
 				.extracting(Reservation::getId)
 				.containsExactly(earlyLunch.getId(), lateLunch.getId());
 	}
@@ -90,7 +90,7 @@ class ReservationPersistenceIntegrationTests {
 		var reservation = reservation(
 				LocalDate.of(2027, 5, 14),
 				LocalTime.of(13, 30),
-				ReservationService.LUNCH,
+				DiningSession.LUNCH,
 				(short) 0);
 
 		assertThatThrownBy(() -> reservationRepository.saveAndFlush(reservation))
@@ -102,7 +102,7 @@ class ReservationPersistenceIntegrationTests {
 		var reservation = reservation(
 				LocalDate.of(2027, 5, 14),
 				LocalTime.of(13, 30),
-				ReservationService.LUNCH,
+				DiningSession.LUNCH,
 				(short) 31);
 
 		assertThatThrownBy(() -> reservationRepository.saveAndFlush(reservation))
@@ -124,14 +124,14 @@ class ReservationPersistenceIntegrationTests {
 	}
 
 	private Reservation reservation(
-			LocalDate date, LocalTime time, ReservationService service, short partySize) {
+			LocalDate date, LocalTime time, DiningSession diningSession, short partySize) {
 		return new Reservation(
 				"Fictional",
 				"Guest",
 				"fictional-test-contact",
 				date,
 				time,
-				service,
+				diningSession,
 				partySize);
 	}
 }

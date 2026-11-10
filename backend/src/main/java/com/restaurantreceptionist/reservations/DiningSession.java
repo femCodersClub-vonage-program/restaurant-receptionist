@@ -1,6 +1,6 @@
 package com.restaurantreceptionist.reservations;
 
-public enum ReservationService {
+public enum DiningSession {
 	LUNCH,
 	DINNER
 }

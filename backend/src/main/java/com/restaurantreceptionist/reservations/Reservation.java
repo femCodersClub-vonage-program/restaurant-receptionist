@@ -40,8 +40,8 @@ public class Reservation {
 	private LocalTime arrivalTime;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 10)
-	private ReservationService service;
+	@Column(name = "service", nullable = false, length = 10)
+	private DiningSession diningSession;
 
 	@Column(name = "party_size", nullable = false)
 	private short partySize;
@@ -58,13 +58,13 @@ public class Reservation {
 	}
 
 	public Reservation(String customerFirstName, String customerLastName, String phoneNumber,
-			LocalDate reservationDate, LocalTime arrivalTime, ReservationService service, short partySize) {
+			LocalDate reservationDate, LocalTime arrivalTime, DiningSession diningSession, short partySize) {
 		this.customerFirstName = customerFirstName;
 		this.customerLastName = customerLastName;
 		this.phoneNumber = phoneNumber;
 		this.reservationDate = reservationDate;
 		this.arrivalTime = arrivalTime;
-		this.service = service;
+		this.diningSession = diningSession;
 		this.partySize = partySize;
 	}
 
@@ -92,8 +92,8 @@ public class Reservation {
 		return arrivalTime;
 	}
 
-	public ReservationService getService() {
-		return service;
+	public DiningSession getDiningSession() {
+		return diningSession;
 	}
 
 	public short getPartySize() {
