@@ -1,8 +1,8 @@
 # Spec: Define design system foundations
 
-> Issue: pending creation | Branch: `feature/<issue-number>-design-system-foundations`
-> Status: ready
-> Last updated: 2026-11-04
+> Issue: [#5](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/5) | Branch: `feature/5-design-system-foundations`
+> Status: done
+> Last updated: 2026-11-10
 
 ---
 

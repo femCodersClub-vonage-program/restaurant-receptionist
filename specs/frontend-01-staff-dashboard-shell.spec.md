@@ -1,8 +1,8 @@
 # Spec: Create the staff dashboard shell
 
-> Issue: pending creation | Branch: `feature/<issue-number>-staff-dashboard-shell`
+> Issue: [#10](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/10) | Branch: `feature/10-staff-dashboard-shell`
 > Status: ready
-> Last updated: 2026-11-03
+> Last updated: 2026-11-10
 
 ---
 

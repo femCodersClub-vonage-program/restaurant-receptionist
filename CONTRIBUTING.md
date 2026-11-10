@@ -15,6 +15,7 @@ We use Spec-Driven Development (SDD): a feature does not start with code alone.
 
 1. The project mentor identifies and creates an issue for an approved need.
 2. A spec in `specs/` defines the problem, scope, acceptance criteria, relevant business rules, technical considerations, and validation.
+   Once GitHub assigns the issue number, update the spec header with the issue link and confirm the issue links back to the spec. Do not mark this preparation complete while either link is missing.
 3. The mentor and team review the spec before implementation starts. Open questions must be resolved or explicitly recorded.
 4. The work is implemented from a branch created from `develop` and remains within the approved issue and spec scope.
 5. The pull request links the issue and the spec, explains validation, and records any follow-up work.

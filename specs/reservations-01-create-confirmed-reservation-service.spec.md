@@ -1,8 +1,8 @@
 # Spec: Create confirmed reservation service
 
-> Issue: pending creation | Branch: `feature/<issue-number>-create-confirmed-reservation-service`
+> Issue: [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) | Branch: `feature/7-create-confirmed-reservation-service`
 > Status: ready
-> Last updated: 2026-11-04
+> Last updated: 2026-11-10
 
 ---
 

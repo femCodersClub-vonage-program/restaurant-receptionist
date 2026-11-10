@@ -1,8 +1,8 @@
 # Spec: Create reusable composite UI components
 
-> Issue: pending creation | Branch: `feature/<issue-number>-composite-ui-components`
+> Issue: [#9](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/9) | Branch: `feature/9-composite-ui-components`
 > Status: ready
-> Last updated: 2026-11-04
+> Last updated: 2026-11-10
 
 ---
 

@@ -1,8 +1,8 @@
 # Spec: Create the initial reservation persistence model
 
-> Issue: pending creation | Branch: `feature/<issue-number>-initial-reservation-persistence`
-> Status: ready
-> Last updated: 2026-11-03
+> Issue: [#4](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/4) | Branch: `feature/4-initial-persistence`
+> Status: done
+> Last updated: 2026-11-10
 
 ---
 

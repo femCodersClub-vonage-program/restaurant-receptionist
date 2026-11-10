@@ -1,8 +1,8 @@
 # Spec: Connect the dashboard to reservation data
 
-> Issue: pending creation | Branch: `feature/<issue-number>-dashboard-reservation-data`
+> Issue: [#11](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/11) | Branch: `feature/11-dashboard-reservation-data`
 > Status: ready
-> Last updated: 2026-11-03
+> Last updated: 2026-11-10
 
 ---
 

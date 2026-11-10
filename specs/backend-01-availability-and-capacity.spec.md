@@ -1,8 +1,8 @@
 # Spec: Implement service availability and capacity calculation
 
-> Issue: pending creation | Branch: `feature/<issue-number>-service-availability-capacity`
+> Issue: [#6](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/6) | Branch: `feature/6-service-availability-capacity`
 > Status: ready
-> Last updated: 2026-11-03
+> Last updated: 2026-11-10
 
 ---
 
