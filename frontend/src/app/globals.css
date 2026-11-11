@@ -76,6 +76,13 @@
     line-height: var(--text-body--line-height);
   }
 
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
   *,
   ::before,
   ::after {
