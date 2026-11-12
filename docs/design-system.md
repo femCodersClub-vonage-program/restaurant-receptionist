@@ -28,6 +28,7 @@ Use a clean, calm, operational interface:
 | Primary text | `foreground` | `#111827` | Headings and essential content. |
 | Secondary text | `foreground-muted` | `#374151` | Supporting content and labels. |
 | Border | `border` | `#E5E7EB` | Quiet boundaries and dividers. |
+| Control border | `control-border` | `#6B7280` | Boundary of interactive controls (inputs, selects). Meets WCAG 1.4.11 3:1 non-text contrast against `surface`. |
 | Selection | `selection` | `#E8F3F3` | Selected or subtle active surfaces. |
 | Success text | `success` | `#14532D` | Success status text. |
 | Success surface | `success-surface` | `#E7F6EC` | Success status background. |
@@ -80,6 +81,7 @@ The scale is closed: only these keys, plus `0`, exist for spacing and sizing uti
 
 - Use `rounded-control` (8 px) for controls such as buttons, inputs, selects, and badges, and `rounded-surface` (12 px) for bounded surfaces such as cards, panels, and alerts.
 - Use the `border` token for quiet visual separation; it is the default border colour, so a plain `border` utility applies it.
+- Use the `control-border` token for the default boundary of interactive controls such as `Input` and `Select`, so their edge is perceivable against `surface` at the required 3:1 non-text contrast.
 - Use `shadow-raised`, the only shadow token, for raised surfaces when a border alone is insufficient.
 - Avoid heavy shadows, excessive rounding, gradients, and decorative visual noise.
 

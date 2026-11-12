@@ -8,6 +8,7 @@
   --color-foreground: #111827;
   --color-foreground-muted: #374151;
   --color-border: #e5e7eb;
+  --color-control-border: #6b7280;
   --color-selection: #e8f3f3;
 
   /* Semantic states: text colour paired with its surface */
