@@ -19,7 +19,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         {...props}
         className={cn(
           "w-full appearance-none rounded-control border bg-surface py-2 pl-3 pr-8 text-body text-foreground",
-          error ? "border-error" : "border-border",
+          error ? "border-error" : "border-control-border",
           className,
         )}
         aria-invalid={error || undefined}
