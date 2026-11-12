@@ -10,6 +10,7 @@ This directory contains approved project documentation that should remain useful
 - [Design system](design-system.md): approved Clean UI tokens, reusable components, and accessibility baseline.
 - [Vonage integration](vonage-integration.md): the intended use of the Vonage APIs and items that still require verification.
 - [Local development setup](setup.md): verified local prerequisites, environment configuration, and run and validation commands.
+- [Project coordination workflow](coordination-workflow.md): pull request event handling, issue creation, assignments, and mentor reporting.
 - [Team guides](guides/README.md): practical, approved procedures for recurring team work.
 - [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
 - [Specification template](../specs/_template.spec.md): the starting point for an implementation spec linked to an approved issue.
