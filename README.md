@@ -73,9 +73,9 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. Contributors work f
 | Name | Role | GitHub |
 | --- | --- | --- |
 | Gabriela Bustamante | Project mentor and tech lead | [GabyB73](https://github.com/GabyB73) |
-| To be confirmed | Participant | — |
-| To be confirmed | Participant | — |
-| To be confirmed | Participant | — |
+| Andrea | Participant | [androsrivas](https://github.com/androsrivas) |
+| Inés | Participant | [isalvama](https://github.com/isalvama) |
+| Joana | Participant | [JoneJoana](https://github.com/JoneJoana) |
 
 ## License
 

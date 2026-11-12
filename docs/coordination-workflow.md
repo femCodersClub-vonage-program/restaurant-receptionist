@@ -8,9 +8,11 @@ Every report and other communication addressed to Gabriela must be in Spanish. R
 
 ## Sources and authority
 
-Before acting, consult `AGENTS.md`, `CONTRIBUTING.md`, the MVP specification, business rules, the relevant specs and ADRs, issue and pull request templates, the current GitHub Project, open issues, and pull requests. Apply the applicable read-only review profiles in `.agents/`. Approved mentor decisions and repository rules take precedence over this workflow.
+Before acting, consult `AGENTS.md`, `CONTRIBUTING.md`, the MVP specification, business rules, the relevant specs and ADRs, issue and pull request templates, the current GitHub Project, open issues, and pull requests. The current participant roster and GitHub usernames are in the README's Team section. Apply the applicable read-only review profiles in `.agents/`. Approved mentor decisions and repository rules take precedence over this workflow.
 
 Distinguish verified GitHub activity from recommendations, assumptions, and decisions still needed. An issue marked *In progress* does not by itself prove that its assignee is actively working. Do not infer progress that is not observable.
+
+Verify each issue's assignees from its current GitHub issue detail before reporting that it is unassigned. A search result or list that omits assignee data is not evidence that the issue has no assignee. If issue details cannot be fetched, report the assignment as unverified rather than absent.
 
 ## Coordination cycle for every pull request event
 
@@ -23,6 +25,8 @@ On each relevant pull request opening, update, review, or merge:
 5. Tell Gabriela in Spanish what was verified, what action was completed, and what remains for her decision. If no issue needs creating or assigning, say so briefly. Do not wait for the next morning's scheduled run to address a queue shortage found during this cycle.
 
 Do not repeat an assignment or create a duplicate issue. Before any write, refresh the relevant issue and assignees so a second task run does not undo or duplicate another run's work. If an action fails, report it as incomplete.
+
+For a manual run without a triggering pull request, inspect the current open pull requests and review those awaiting mentor review or changed since their last review. Then check all three assignment queues and perform the same replenishment steps if needed. Report which pull requests were checked; do not treat a missing event payload as a reason to skip the review.
 
 ## Assignment rules
 
