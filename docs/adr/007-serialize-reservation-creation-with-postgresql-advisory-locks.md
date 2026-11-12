@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted on 2026-11-13 by the project mentor.
 
 ## Date
 
