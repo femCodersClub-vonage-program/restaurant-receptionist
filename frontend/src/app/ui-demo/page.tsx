@@ -85,6 +85,27 @@ export default function UiDemoPage() {
             <option value="2">2 guests</option>
           </Select>
         </div>
+        <div className="flex w-full max-w-sm flex-col gap-2">
+          <label htmlFor="service-error" className="text-label">
+            Service
+          </label>
+          <Select
+            id="service-error"
+            name="serviceError"
+            error
+            aria-describedby="service-error-message"
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Select a service
+            </option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+          </Select>
+          <p id="service-error-message" className="text-label text-error">
+            Select a service to continue.
+          </p>
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">
