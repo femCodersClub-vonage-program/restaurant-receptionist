@@ -25,7 +25,7 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/mvp-speci
 ## Collaboration workflow
 
 - Follow the `main` and `develop` branching workflow in [CONTRIBUTING.md](CONTRIBUTING.md).
-- Only the project mentor creates GitHub issues.
+- Create or assign GitHub issues only when authorized by the project mentor and within approved scope. Escalate new product or technical decisions to the mentor.
 - Do not create branches, commits, pull requests, merges, releases, or repository configuration changes without explicit authorization from the mentor.
 - Before significant changes, explain what will change and why.
 - When asked to review a pull request, read and follow the applicable read-only profile in [`.agents/`](.agents/README.md). These profiles guide evidence-based review; they do not replace human approval or required CI checks.
