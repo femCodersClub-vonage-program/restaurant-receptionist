@@ -21,7 +21,7 @@ Define and implement a read-only Spring MVC contract for a selected date that re
 
 - [ ] Approve the route, query parameter, response shape, and validation/error responses before implementation.
 - [ ] Return reservation fields required by RN-07 and a capacity summary for each session.
-- [ ] Document the implemented contract with OpenAPI when that foundation is available.
+- [ ] Document the implemented contract in the generated OpenAPI document.
 - [ ] Add controller and PostgreSQL-backed integration tests for populated, empty, and invalid-date cases.
 
 ### Out of scope
@@ -183,4 +183,4 @@ Provide distinguishable empty and error outcomes so #11 can render them accessib
 
 ## Notes
 
-OpenAPI foundation may proceed in parallel; once merged, this endpoint must appear in the generated document.
+The OpenAPI foundation was integrated in [PR #23](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/23). This endpoint must appear in the generated document when implemented.
