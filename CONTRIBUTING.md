@@ -20,6 +20,8 @@ We use Spec-Driven Development (SDD): a feature does not start with code alone.
 4. The work is implemented from a branch created from `develop` and remains within the approved issue and spec scope.
 5. The pull request links the issue and the spec, explains validation, and records any follow-up work.
 
+When adding an HTTP endpoint, document its request, successful and error responses, validation behavior, and relevant examples with the implementation. Keep the generated OpenAPI description aligned with the endpoint's actual behavior.
+
 Use [the spec template](specs/_template.spec.md) for a new spec. Significant technical decisions are recorded as ADRs in [`docs/adr/`](docs/adr/).
 
 ## GitHub Project and issues
