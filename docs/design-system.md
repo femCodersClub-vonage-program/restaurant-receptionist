@@ -28,6 +28,7 @@ Use a clean, calm, operational interface:
 | Primary text | `foreground` | `#111827` | Headings and essential content. |
 | Secondary text | `foreground-muted` | `#374151` | Supporting content and labels. |
 | Border | `border` | `#E5E7EB` | Quiet boundaries and dividers. |
+| Control border | `control-border` | `#6B7280` | Boundary of interactive controls (inputs, selects). Meets WCAG 1.4.11 3:1 non-text contrast against `surface`. |
 | Selection | `selection` | `#E8F3F3` | Selected or subtle active surfaces. |
 | Success text | `success` | `#14532D` | Success status text. |
 | Success surface | `success-surface` | `#E7F6EC` | Success status background. |
@@ -80,6 +81,7 @@ The scale is closed: only these keys, plus `0`, exist for spacing and sizing uti
 
 - Use `rounded-control` (8 px) for controls such as buttons, inputs, selects, and badges, and `rounded-surface` (12 px) for bounded surfaces such as cards, panels, and alerts.
 - Use the `border` token for quiet visual separation; it is the default border colour, so a plain `border` utility applies it.
+- Use the `control-border` token for the default boundary of interactive controls such as `Input` and `Select`, so their edge is perceivable against `surface` at the required 3:1 non-text contrast.
 - Use `shadow-raised`, the only shadow token, for raised surfaces when a border alone is insufficient.
 - Avoid heavy shadows, excessive rounding, gradients, and decorative visual noise.
 
@@ -94,14 +96,94 @@ The scale is closed: only these keys, plus `0`, exist for spacing and sizing uti
 
 ### Base components
 
-The shared base set is:
+The shared base set is implemented in `frontend/src/components/ui/` and exported from a single barrel file. Import them with the `@/components/ui` alias.
 
-- `Button`: primary, secondary, and disabled variants; loading when applicable.
-- `Input`: text-entry control with standard focus and error support.
-- `Select`: native or accessible select control using the shared styling.
-- `Badge`: concise non-interactive status or category label.
-- `Card`: surface for bounded related content.
-- `Alert`: success, error, and warning messages.
+- `Button`: primary and secondary variants, plus hover, focus, disabled, and loading states.
+- `Input`: native text-entry control with default, disabled, and error states.
+- `Select`: native select control with default, disabled, and error states and a shared chevron.
+- `Badge`: concise non-interactive status or category label with neutral, success, warning, and error variants.
+- `Card`: bounded surface for related content.
+- `Alert`: success, warning, and error messages.
+
+Use [Lucide](https://lucide.dev/) through the approved `lucide-react` package as the project's single icon library. Icons are decorative only when adjacent text already conveys the same meaning; otherwise they require an accessible name.
+
+#### Button
+
+| Variant | Use |
+| --- | --- |
+| `primary` | The single prominent action in a context. |
+| `secondary` | Secondary or low-emphasis actions. |
+
+States: default, hover, visible focus, disabled, and loading. A loading button is disabled, exposes `aria-busy`, and shows a spinning Lucide icon next to its label.
+
+Colour: the primary variant uses `bg-primary` with a white label (`text-white`) to maintain contrast on the dark primary surface. The system has no dedicated on-primary token, so white is the documented label colour for the primary action. On hover the primary background is shown at 90% opacity (`hover:bg-primary/90`) and the secondary background becomes `bg-selection`. Add a token before introducing any new button colour.
+
+```tsx
+<Button>Save</Button>
+<Button variant="secondary">Cancel</Button>
+<Button disabled>Unavailable</Button>
+<Button loading>Saving...</Button>
+```
+
+#### Input
+
+Native `input` styled with the shared control tokens. Set `error` to apply the error border and `aria-invalid`. Provide a visible label and, on error, an associated error message from the surrounding form.
+
+```tsx
+<label htmlFor="name">Name</label>
+<Input id="name" error aria-describedby="name-error" />
+<p id="name-error">Enter a valid name.</p>
+```
+
+#### Select
+
+Native `select` with a decorative chevron. It preserves native keyboard and option behaviour.
+
+```tsx
+<label htmlFor="service">Service</label>
+<Select id="service">
+  <option value="lunch">Lunch</option>
+  <option value="dinner">Dinner</option>
+</Select>
+```
+
+#### Badge
+
+| Variant | Use |
+| --- | --- |
+| `neutral` | Default, unclassified status. |
+| `success` | Confirmed or completed status. |
+| `warning` | Attention or pending status. |
+| `error` | Failed or blocked status. |
+
+```tsx
+<Badge>Pending</Badge>
+<Badge variant="success">Confirmed</Badge>
+```
+
+#### Card
+
+A `rounded-surface` surface with the shared border and background. It does not impose padding; compose spacing inside the card.
+
+```tsx
+<Card className="p-6">...</Card>
+```
+
+#### Alert
+
+| Variant | Role |
+| --- | --- |
+| `success` | `status` |
+| `warning` | `status` |
+| `error` | `alert` |
+
+Each alert pairs its state text token with its own surface and includes a decorative Lucide icon. The title and body text carry the meaning; colour is not the only indicator.
+
+```tsx
+<Alert variant="error" title="Could not save">
+  The requested party exceeds capacity.
+</Alert>
+```
 
 ### Composite components
 
