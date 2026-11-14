@@ -48,6 +48,8 @@ If a participant proposes a change outside an issue's scope, a new dependency, o
 
 Compare each pull request with its issue, spec, repository rules, changed files, validation evidence, and current CI. Apply `docs-reviewer` to every pull request and the applicable UI, accessibility, and design-system profiles to user-facing frontend changes. Report findings with severity and specific evidence, including a file and line when available. State what could not be verified; do not claim an unrun test passed.
 
+For pull requests opened after the **Review profiles** section was added to the template, compare the author's summary for each applicable profile with the changed code, documentation, and review findings. Treat the summary as the author's account, not proof that a profile ran. If it is missing or does not fit the evidence, report the specific discrepancy to Gabriela and suggest a neutral question for the author. Do not accuse a participant of inventing a review. Earlier pull requests need not be rewritten solely to use the new template.
+
 Do not recommend approval while blocking findings, required failed or pending checks, or missing affected documentation remain. When documentation need not change, verify that the author explains why. If the pull request is ready, give Gabriela a reasoned recommendation and a constructive draft message for the author. Gabriela approves; the pull request author merges. The coordinator must not approve or merge a pull request.
 
 ## Reporting and limits

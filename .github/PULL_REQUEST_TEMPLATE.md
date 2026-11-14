@@ -19,6 +19,15 @@
 
 1.
 
+## Review profiles
+
+<!-- Before requesting review, run each applicable read-only profile from .agents/. For each, give its final verdict, a meaningful finding and what you changed (or "No findings"), and anything it could not verify. Explain why you did not apply a suggestion. Keep this brief; do not paste the full reports. docs-reviewer applies to every PR. Add the UI, accessibility, and design-system profiles for relevant frontend changes; remove their lines otherwise. There is no backend-specific review profile. -->
+
+- `docs-reviewer`: Verdict — ...; finding and action (or no findings) — ...; not verified — ...
+- `ui-reviewer`: Verdict — ...; finding and action (or no findings) — ...; not verified — ...
+- `accessibility-reviewer`: Verdict — ...; finding and action (or no findings) — ...; not verified — ...
+- `design-system-reviewer`: Verdict — ...; finding and action (or no findings) — ...; not verified — ...
+
 ## Screenshots
 
 <!-- Add screenshots or a short recording when visual evidence helps a reviewer verify a user-facing change. Include it for changed layout, visual styling, or visible states. Delete this section when it does not apply. Use fictional data only. -->
@@ -29,7 +38,6 @@
 
 **Every pull request**
 
-- [ ] I ran `docs-reviewer` on this branch and addressed its blocking and important findings.
 - [ ] Changes stay within the scope of the linked issue and spec.
 - [ ] I ran the relevant validation or explained why it could not run.
 - [ ] No secrets, Vonage credentials, real personal data, or real `.env` files are included.
@@ -41,10 +49,10 @@
 - [ ] Documentation was updated in this pull request: relevant project documents, the linked spec if implementation changed it, setup instructions, architecture diagrams, guides, or ADRs as needed.
 - [ ] An ADR was added or updated for a significant architecture, dependency, or security decision.
 - [ ] A new dependency is justified in this pull request, including why it is needed and why the approved stack does not already solve the problem.
-- [ ] UI: I ran `ui-reviewer`, `accessibility-reviewer`, and `design-system-reviewer`; addressed their blocking and important findings; and reported Tab/Shift+Tab navigation, visible-focus results, and any checks not verified.
+- [ ] UI: I reported Tab/Shift+Tab navigation, visible-focus results, and any checks not verified in **How to test**.
 - [ ] Database migration: the Flyway migration follows `CONTRIBUTING.md`, the issue and pull request state the proposed filename, and I checked for version collisions after updating from `develop`.
 - [ ] Vonage: behavior was checked against current official documentation, and tests use test doubles or verified local mechanisms rather than real credits by default.
 
 ## Notes for the reviewer
 
-<!-- Record profile results, checks that could not be verified, relevant decisions, dependencies, trade-offs, or follow-up work. -->
+<!-- Record relevant decisions, dependencies, trade-offs, or follow-up work. Put review profile results in Review profiles and validation gaps in How to test. -->
