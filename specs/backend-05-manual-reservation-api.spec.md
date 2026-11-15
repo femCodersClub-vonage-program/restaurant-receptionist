@@ -1,6 +1,6 @@
 # Spec: Expose manual confirmed reservation creation
 
-> Issue: pending creation | Branch: pending issue assignment
+> Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: pending assignment
 > Status: ready
 > Last updated: 2026-11-15
 

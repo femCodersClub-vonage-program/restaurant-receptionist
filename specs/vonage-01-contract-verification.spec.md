@@ -1,6 +1,6 @@
 # Spec: Verify Vonage contracts for the MVP
 
-> Issue: pending creation | Branch: pending issue assignment
+> Issue: [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) | Branch: pending assignment
 > Status: ready
 > Last updated: 2026-11-15
 
