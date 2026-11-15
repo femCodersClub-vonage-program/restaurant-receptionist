@@ -1,8 +1,8 @@
 # Spec: Expose manual confirmed reservation creation
 
 > Issue: pending creation | Branch: pending issue assignment
-> Status: draft
-> Last updated: 2026-11-14
+> Status: ready
+> Last updated: 2026-11-15
 
 ---
 

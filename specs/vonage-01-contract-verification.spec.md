@@ -1,8 +1,8 @@
 # Spec: Verify Vonage contracts for the MVP
 
 > Issue: pending creation | Branch: pending issue assignment
-> Status: draft
-> Last updated: 2026-11-14
+> Status: ready
+> Last updated: 2026-11-15
 
 ---
 
