@@ -13,7 +13,7 @@ This directory contains approved project documentation that should remain useful
 - [Project coordination workflow](coordination-workflow.md): pull request event handling, issue creation, assignments, and mentor reporting.
 - [Team guides](guides/README.md): practical, approved procedures for recurring team work.
 - [Architecture decision records](adr/README.md): significant technical decisions and their consequences.
-- [Specification template](../specs/_template.spec.md): the starting point for an implementation spec linked to an approved issue.
+- [Specification template](../specs/_template.spec.md): the starting point for a feature spec that may support several approved issues.
 - [Pull request review profiles](../.agents/README.md): read-only review guidance for documentation, UI/UX, accessibility, and design-system changes.
 
 ## Planned documentation

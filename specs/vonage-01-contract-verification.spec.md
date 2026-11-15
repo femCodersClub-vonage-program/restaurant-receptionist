@@ -12,7 +12,7 @@ The team has completed the Voice API learning path, but the MVP still lacks veri
 
 ## Proposed solution
 
-Research only the Vonage capabilities needed for the approved reservation journey. Complete this same spec with official sources, any safely performed test results, limitations, and questions for the mentor. Use the findings as input to later, separate implementation specs.
+Research only the Vonage capabilities needed for the approved reservation journey. Complete this same spec with official sources, any safely performed test results, limitations, and questions for the mentor. Use the findings as input to the shared Voice and notification feature specs and their implementation issues.
 
 ## Scope
 
@@ -37,7 +37,7 @@ Research only the Vonage capabilities needed for the approved reservation journe
 - [ ] Spanish speech capture and playback viability for the proposed guided journey is assessed, with documented support distinguished from a practical test.
 - [ ] A proposed sequence from incoming call through persisted reservation and SMS status is traceable to verified contracts; unsupported or unknown steps are marked clearly.
 - [ ] The spec identifies the minimal data needed for call and message correlation, webhook idempotency, and notification status without inventing payload fields.
-- [ ] The mentor can identify decisions and blockers before approving Voice and Messages implementation specs.
+- [ ] The mentor can identify decisions and blockers before approving implementation slices in the Voice and notification feature specs.
 - [ ] No credentials, private keys, real contact values, or unredacted provider payloads appear in committed evidence.
 
 ## Business rules and decisions
@@ -92,7 +92,7 @@ Record any speech-recognition limitations that affect a caller's ability to comp
 ## Dependencies and environment
 
 - [ ] Official documentation is available without credentials. Live verification depends on mentor-approved test access and safe callback reachability.
-- [ ] Later Voice, SMS, status-webhook, and notification-persistence specs must cite the completed findings where relevant.
+- [ ] The Voice and notification feature specs and their relevant implementation issues must cite the completed findings.
 
 ## Notes
 
