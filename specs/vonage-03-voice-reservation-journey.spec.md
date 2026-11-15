@@ -1,7 +1,7 @@
 # Spec: Guided telephone reservation journey
 
-> Related issues: none yet; proposed slices in the delivery map
-> Status: draft; provider contracts and relevant product decisions pending
+> Related issues: [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35), [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36), [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37)
+> Status: draft; all related issues are planned and blocked pending provider contracts and relevant product decisions
 > Last updated: 2026-11-15
 
 ---
@@ -18,11 +18,11 @@ Connect a guided Voice flow to the existing reservation services. Capture and va
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| Pending creation: entry and call state | Handle an incoming call, maintain the minimal call session, and deduplicate repeated events. | Draft; requires #26 evidence for Voice webhooks, identifiers, authentication, and response behaviour. |
-| Pending creation: guided capture | Ask for the required fields, validate them, handle silence/invalid input, three attempts per field, and one-field correction. | Draft; requires the entry/session slice, #26 evidence for Spanish speech and input results, and mentor decisions that affect capture. |
-| Pending creation: confirmation and alternatives | Read back details, require affirmative confirmation, call #7 for atomic creation, and use #19 for the same-date alternative when needed. | Draft; requires the earlier Voice slices, #7, #19, #26 evidence, and relevant mentor decisions. |
+| [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35) | Handle an incoming call, maintain the minimal call session, and deduplicate repeated events. | Planned and blocked by #26 evidence for Voice webhooks, identifiers, authentication, and response behaviour; persistence is undecided. |
+| [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36) | Ask for the required fields, validate them, handle silence/invalid input, three attempts per field, and one-field correction. | Planned and blocked by #26, #35, and mentor decisions that affect capture. |
+| [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37) | Read back details, require affirmative confirmation, call #7 for atomic creation, and use #19 for the same-date alternative when needed. | Planned and blocked by #26, #7, #19, #36, and relevant mentor decisions. |
 
-These are proposed issue boundaries, not published issues. Review them after #26 before creating or marking implementation work ready. One issue may be split if its scope proves too large without duplicating this spec.
+These published issues define provisional delivery boundaries. Review and refine their contracts and acceptance criteria after #26; do not mark them ready for implementation until the relevant findings and decisions are approved. One issue may be split if its scope proves too large without duplicating this spec.
 
 ## Scope
 
@@ -64,7 +64,7 @@ These are proposed issue boundaries, not published issues. Review them after #26
 
 ### Backend and Voice integration
 
-Define the exact answer/event/input webhook routes, methods, payloads, responses, NCCO actions, authentication, correlation keys, and error handling after #26. Persist only the call state required for safe continuation and idempotency; choose its lifetime and cleanup policy during slice review. Keep final reservation creation in #7.
+Define the exact answer/event/input webhook routes, methods, payloads, responses, NCCO actions, authentication, correlation keys, and error handling after #26. Retain only the call state required for safe continuation and idempotency; decide whether it needs persistence, its lifetime, and its cleanup policy during slice review. Keep final reservation creation in #7.
 
 ### Data and migrations
 
@@ -86,4 +86,4 @@ Keep credentials and private keys in local configuration. Use fictional caller d
 
 ## Dependencies and notes
 
-This draft is a feature boundary for planning. #26 owns the provider research and updates only its own research spec. The mentor reviews those findings and product decisions before this Voice spec is completed, split into approved issues, or marked ready for implementation.
+This draft is a feature boundary for planning. #26 owns the provider research and updates only its own research spec. The mentor reviews those findings and product decisions before this Voice spec and its linked issues are marked ready for implementation.
