@@ -82,8 +82,8 @@ Use visible labels, required indicators, linked help/error text, visible focus, 
 
 ## Dependencies and environment
 
-- [ ] Blocked by [#9](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/9), [#10](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/10), and the approved manual-creation API being merged.
-- [ ] Coordinate the final placement and refresh behaviour with [#11](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/11).
+- [ ] Blocked by [#9](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/9), [#10](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/10), [#11](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/11), and the approved manual-creation API being merged.
+- [ ] Coordinate the final placement and refresh behaviour with the dashboard data flow delivered by #11.
 
 ## Notes
 
