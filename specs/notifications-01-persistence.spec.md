@@ -1,7 +1,7 @@
 # Spec: Reservation confirmation notification journey
 
-> Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30); later slices pending creation
-> Status: #30 ready for planning but blocked for implementation; later slices draft
+> Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
+> Status: #30 ready for planning but blocked for implementation; #33 and #34 planned and blocked
 > Last updated: 2026-11-15
 
 ---
@@ -19,10 +19,10 @@ Build the journey in bounded slices: persist notification state, request an SMS 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
 | [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state and correlation data. The existing scope and acceptance criteria below apply only to #30. | Published and ready for planning; implementation blocked by mentor-reviewed #26 findings and approved state mapping. |
-| Pending creation: SMS request | Request one confirmation SMS after a telephone reservation is confirmed and record the provider outcome. | Draft; depends on #7, #30, verified Messages request contract, and approval of the send/correlation design. |
-| Pending creation: status callbacks | Accept verified Messages status events and update the matching notification idempotently. | Draft; depends on #30, verified callback contract and authentication, and approved state transitions. |
+| [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after a telephone reservation is confirmed and record the provider outcome. | Planned and blocked; depends on #26, #7, #30, verified Messages request contract, and approval of the send/correlation design. |
+| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
 
-Future issue numbers and links belong in this map after publication. Each issue must link back to this spec. The later slices do not expand #30.
+Each issue links back to this spec. The later slices do not expand #30.
 
 ## Scope
 
