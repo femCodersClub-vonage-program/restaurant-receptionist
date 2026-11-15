@@ -1,6 +1,6 @@
 # Spec: Persist reservation notification state
 
-> Issue: pending creation | Branch: pending issue assignment
+> Issue: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Branch: pending assignment
 > Status: ready
 > Last updated: 2026-11-15
 

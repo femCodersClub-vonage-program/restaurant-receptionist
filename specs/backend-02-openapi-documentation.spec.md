@@ -1,8 +1,8 @@
 # Spec: Add OpenAPI documentation foundation
 
 > Issue: [#18](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/18) | Branch: `feature/18-openapi-documentation`
-> Status: ready
-> Last updated: 2026-11-10
+> Status: done
+> Last updated: 2026-11-15
 
 ---
 

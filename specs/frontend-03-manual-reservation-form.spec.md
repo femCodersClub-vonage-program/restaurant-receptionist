@@ -1,6 +1,6 @@
 # Spec: Add manual reservation creation to the dashboard
 
-> Issue: pending creation | Branch: pending issue assignment
+> Issue: [#29](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/29) | Branch: pending assignment
 > Status: ready
 > Last updated: 2026-11-15
 

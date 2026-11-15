@@ -1,8 +1,8 @@
 # Spec: Create reusable base UI components
 
 > Issue: [#8](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/8) | Branch: `feature/8-base-ui-components`
-> Status: ready
-> Last updated: 2026-11-10
+> Status: done
+> Last updated: 2026-11-15
 
 ---
 
