@@ -1,7 +1,7 @@
 # Spec: [Short feature title]
 
-> Issue: #[number] | Branch: `[type]/[issue-number]-short-description`
-> Status: `draft` / `ready` / `in-progress` / `done`
+> Related issues: none yet / see delivery map below
+> Status: `draft` / `ready` / `in-progress` / `done` (state what this covers if slices differ)
 > Last updated: YYYY-MM-DD
 
 ---
@@ -14,7 +14,17 @@
 
 <!-- Describe the intended outcome at a high level. Do not invent implementation details that have not been approved. -->
 
+## Delivery map
+
+<!-- One spec may cover several issues. Link each published issue here and link the spec from that issue. State the deliverable and readiness per slice. A draft or blocked slice does not block unrelated approved slices. -->
+
+| Issue | Deliverable | Readiness and dependencies |
+| --- | --- | --- |
+| Pending creation | [Bounded outcome] | Draft; [decision or dependency] |
+
 ## Scope
+
+<!-- Define the feature boundary here. State issue-specific exclusions in the delivery map or issue rather than excluding other slices of this feature. -->
 
 ### In scope
 
