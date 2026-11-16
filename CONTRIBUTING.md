@@ -5,20 +5,21 @@ Thank you for contributing to Restaurant Receptionist, a FemCoders Club pilot pr
 ## Before you start
 
 - Read the [README](README.md), [MVP specification](docs/mvp-specification.md), [business rules](docs/business-rules.md), and [AI agent guidance](AGENTS.md).
-- Work only on an issue created and approved by the project mentor. The mentor creates and prioritizes all issues.
-- If you identify a bug, question, or improvement, report it in the team's Slack channel. Do not open a new issue yourself.
+- Work only on issues within the scope approved by the project mentor. The mentor owns backlog priorities; authorized contributors and AI assistants may create issues.
+- If you identify a bug, question, or improvement, report it in the team's Slack channel or a relevant issue. Create a new issue only if the mentor has authorized you to do so.
 - Raise blockers as soon as they appear. Technical decisions that affect the project must be recorded in the repository documentation or the relevant GitHub issue.
 
 ## From problem to code
 
-We use Spec-Driven Development (SDD): a feature does not start with code alone.
+We use Spec-Driven Development (SDD): a feature does not start with code alone. A spec describes a coherent feature or integration and may support several implementation issues. A small bug fix or bounded maintenance task may rely on existing rules and documentation without a new spec when its issue contains enough scope, acceptance criteria, and validation.
 
-1. The project mentor identifies and creates an issue for an approved need.
-2. A spec in `specs/` defines the problem, scope, acceptance criteria, relevant business rules, technical considerations, and validation.
-   Once GitHub assigns the issue number, update the spec header with the issue link and confirm the issue links back to the spec. Do not mark this preparation complete while either link is missing.
-3. The mentor and team review the spec before implementation starts. Open questions must be resolved or explicitly recorded.
-4. The work is implemented from a branch created from `develop` and remains within the approved issue and spec scope.
-5. The pull request links the issue and the spec, explains validation, and records any follow-up work.
+1. The project mentor approves and prioritizes a need. The mentor or an authorized contributor or AI assistant creates the issue using the repository template.
+2. When a spec is needed, it defines the feature outcome, shared rules and contracts, boundaries, acceptance scenarios, and validation. Divide that outcome into issues with distinct deliverables, dependencies, and expected validation; do not duplicate the whole spec in each issue.
+3. Link every issue covered by a spec back to it. Once GitHub assigns an issue number, add its link to the spec's delivery map and identify its slice. Keep both links current; a draft or blocked slice does not make another slice ready to implement.
+4. The mentor and team review the relevant spec and issue scope before implementation starts. Resolve open questions that affect that slice; record remaining questions and blockers explicitly.
+5. Implement each issue from a branch created from `develop`, within its approved scope. Keep each pull request focused on one approved issue and link its spec when applicable. Update the shared spec in the same pull request when the agreed behaviour or contract changes.
+
+When adding an HTTP endpoint, document its request, successful and error responses, validation behavior, and relevant examples with the implementation. Keep the generated OpenAPI description aligned with the endpoint's actual behavior.
 
 Use [the spec template](specs/_template.spec.md) for a new spec. Significant technical decisions are recorded as ADRs in [`docs/adr/`](docs/adr/).
 
@@ -26,8 +27,8 @@ Use [the spec template](specs/_template.spec.md) for a new spec. Significant tec
 
 The GitHub Project tracks approved work. Every implementation issue should have a clear owner, scope, acceptance criteria, and expected validation.
 
-- Only the project mentor creates and prioritizes issues.
-- Link an implementation issue to its spec when a spec is required.
+- The mentor approves scope and priority. Authorized contributors and AI assistants may create and assign issues according to the approved backlog.
+- Link an implementation issue to its spec when a spec is required. Several issues may share one spec; each issue must identify its own deliverable and blockers.
 - Raise blockers promptly and explain the reason in the issue or its linked project item.
 - Do not expand an issue's scope silently. Create or propose a follow-up issue instead.
 
@@ -93,7 +94,8 @@ The read-only profiles in [`.agents/`](.agents/README.md) make reviews consisten
 - Apply [`docs-reviewer`](.agents/docs-reviewer.md) to every pull request.
 - Apply [`ui-reviewer`](.agents/ui-reviewer.md), [`accessibility-reviewer`](.agents/accessibility-reviewer.md), and [`design-system-reviewer`](.agents/design-system-reviewer.md) when a pull request changes a user-facing frontend flow, component, interaction, or visual style.
 - Before opening a pull request for review, or marking a draft pull request ready for review, the author runs every applicable profile on their branch. The author resolves blocking findings first and reruns the relevant profile after the correction.
-- The pull request author identifies the applicable profiles in the pull request template and records the final result in the pull request conversation. A result of `Ready for approval` may proceed to mentor review; `Requires changes` must be resolved first. When a profile reports `Not verifiable`, state what could not be checked and why.
+- In the pull request's **Review profiles** section, the author lists each applicable profile and briefly records its final verdict, a meaningful finding and the action taken, or `No findings`. Explain why a suggestion was not applied and state what could not be checked when a profile reports `Not verifiable`. Do not paste full profile reports. A result of `Ready for approval` may proceed to mentor review; `Requires changes` must be resolved first.
+- This section is the author's account of the review, not proof that a profile ran. The mentor reviews the pull request independently. Apply the new section to pull requests opened after this template change; earlier pull requests do not need to be rewritten solely to match the new template.
 - Resolve blocking findings before merge. Resolve important findings before merge unless the mentor records a reasoned exception. Suggestions do not block a pull request.
 - A profile can report that a check was not verifiable. Do not claim a successful runtime result without evidence.
 
@@ -121,6 +123,7 @@ The project targets WCAG 2.1 AA for user-facing work.
 
 AI can support research, planning, implementation, and review, but it does not replace responsibility for the work.
 
+- Authorized AI assistants may help prepare specs, create and assign issues, and review pull requests; they follow the same project templates and review rules as contributors.
 - The spec comes first: do not ask an assistant to invent product or technical scope.
 - The pull request author must understand and be able to explain every submitted change, including AI-generated content.
 - Verify Vonage API claims against current official documentation before implementing them.

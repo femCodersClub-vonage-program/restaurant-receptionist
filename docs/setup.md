@@ -122,7 +122,12 @@ cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-The backend starts at `http://localhost:8080`. The initial setup intentionally exposes no product endpoints, so there are no application routes to use yet. Stop the process with `Ctrl+C` on both Windows and macOS.
+The backend starts at `http://localhost:8080`. The generated API documentation is available at:
+
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+
+The documentation endpoints are enabled by the `local` profile only. The document reflects the backend controllers that are implemented. It currently provides the documentation foundation and will expand as product endpoints are added; it is not a complete product API contract yet. Stop the process with `Ctrl+C` on both Windows and macOS.
 
 The environment-loading commands must be repeated in every new PowerShell or macOS Terminal session before starting the backend with the `local` profile. The variables are available only for the current shell/terminal session.
 
