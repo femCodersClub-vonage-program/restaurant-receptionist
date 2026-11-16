@@ -2,7 +2,7 @@
 
 > Issue: [#27](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/27) | Branch: pending assignment
 > Status: ready
-> Last updated: 2026-11-15
+> Last updated: 2026-11-16
 
 ---
 
@@ -18,27 +18,27 @@ Install and configure the Vonage Server API Bindings (Tooling) MCP server and Vo
 
 ### In scope
 
-- [ ] Verify current official installation instructions and prerequisites for the Tooling MCP server and CLI, then install both locally.
-- [ ] Configure both tools with the assignee's own Vonage developer account and verify an authenticated, read-only operation with each tool.
-- [ ] Document the actual MCP client setup and CLI configuration, including how local credentials are supplied, where each tool stores configuration, safe removal, and troubleshooting.
-- [ ] Provide reproducible, placeholder-only setup steps for other participants using their own Vonage accounts; mark commands as tested or untested.
+- [x] Verify current official installation instructions and prerequisites for the Tooling MCP server and CLI, then install both locally.
+- [x] Configure both tools with the assignee's own Vonage developer account and verify an authenticated, read-only operation with each tool.
+- [x] Document the MCP client setup and CLI configuration, including how local credentials are supplied, where each tool stores configuration, safe removal, account-specific setup, and troubleshooting in the [Vonage developer tooling guide](../docs/guides/vonage-developer-tooling.md).
+- [x] Provide reproducible, placeholder-only setup steps for other participants using their own Vonage accounts; mark commands as tested or untested in the [Vonage developer tooling guide](../docs/guides/vonage-developer-tooling.md).
 - [ ] Optionally install the Documentation MCP server and verify a documentation lookup if it helps the separate contract research.
-- [ ] State which operations can spend credits or change account configuration and require explicit mentor approval before use.
+- [x] State which operations can spend credits or change account configuration and confirm they were not used for this issue in the [Vonage developer tooling guide](../docs/guides/vonage-developer-tooling.md).
 
 ### Out of scope
 
-- [ ] Adding MCP or CLI packages to the backend or frontend dependencies, CI, or runtime architecture.
-- [ ] Committing local MCP client files, credentials, private keys, actual account identifiers, or real numbers.
-- [ ] Creating or changing a Vonage application, linking numbers, sending SMS, or placing calls.
-- [ ] Treating MCP or CLI output as a substitute for official API contracts or implementing Voice/Messages integration.
+- Adding MCP or CLI packages to the backend or frontend dependencies, CI, or runtime architecture.
+- Committing local MCP client files, credentials, private keys, actual account identifiers, or real numbers.
+- Creating or changing a Vonage application, linking numbers, sending SMS, or placing calls.
+- Treating MCP or CLI output as a substitute for official API contracts or implementing Voice/Messages integration.
 
 ## Acceptance criteria
 
-- [ ] The Tooling MCP server and CLI are installed locally, their versions or package sources are recorded, and an authenticated read-only operation succeeds with each.
+- [x] The Tooling MCP server and CLI are installed locally, their versions or package sources are recorded, and an authenticated read-only operation succeeds with each.
 - [ ] A contributor can follow the tested, placeholder-only setup for both tools with her own account without putting credentials in the repository or browser bundle.
-- [ ] The guide states how credentials reach each process and where configuration is stored; it does not assume either tool automatically reads the project's `.env` file.
-- [ ] Commands and results are labelled tested or untested, and operations that cost credits or mutate Vonage state are clearly identified.
-- [ ] No project dependency or application architecture is changed.
+- [x] The guide states how credentials reach each process and where configuration is stored; it does not assume either tool automatically reads the project's `.env` file.
+- [x] Commands and results are labelled tested or untested, and operations that cost credits or mutate Vonage state are clearly identified.
+- [x] No project dependency or application architecture is changed.
 
 ## Business rules and decisions
 
@@ -76,18 +76,18 @@ Not applicable to the restaurant UI.
 
 ### Automated
 
-- [ ] No application tests are required because this task changes no application code.
+- [x] No application tests are required because this task changes no application code.
 
 ### Manual verification
 
-- [ ] Verify both installations and run one authenticated read-only operation with each using the assignee's account.
-- [ ] Follow the written steps from a separate local setup or ask another participant to verify them with her own account, recording anything not checked.
-- [ ] Check the resulting diff for secrets and machine-specific configuration.
+- [x] Verify both installations and run one authenticated read-only operation with each using the assignee's account.
+- [ ] Follow the written steps from a separate local setup or ask another participant to verify them with her own account, recording anything not checked, after the pull request is merged.
+- [x] Check the resulting diff for secrets and machine-specific configuration.
 
 ## Dependencies and environment
 
-- [ ] The assignee needs her own Vonage developer account and a compatible MCP client. The mentor has approved read-only setup verification using participants' own accounts.
-- [ ] Creation or modification of applications, number linking, calls, and messages require separate approved work.
+- [x] The assignee needs her own Vonage developer account and a compatible MCP client. The mentor has approved read-only setup verification using participants' own accounts.
+- [x] Creation or modification of applications, number linking, calls, and messages require separate approved work.
 - [ ] Coordinate with [Vonage contract research](vonage-01-contract-verification.spec.md) to avoid duplicate research notes.
 
 ## Notes
