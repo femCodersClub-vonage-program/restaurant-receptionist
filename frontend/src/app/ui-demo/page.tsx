@@ -144,6 +144,12 @@ export default function UiDemoPage() {
           </Alert>
         </div>
       </section>
+
+      <p>
+        <a href="/ui-demo/composite" className="text-primary underline">
+          View composite UI components
+        </a>
+      </p>
     </main>
   );
 }
