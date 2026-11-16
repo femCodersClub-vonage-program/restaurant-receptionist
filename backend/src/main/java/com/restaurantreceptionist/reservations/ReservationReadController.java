@@ -3,6 +3,7 @@ package com.restaurantreceptionist.reservations;
 import java.net.URI;
 import java.time.LocalDate;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -50,7 +51,7 @@ public class ReservationReadController {
 	})
 	public ReservationReadResponse getReservations(
 			@Parameter(description = "Date to read in YYYY-MM-DD format", example = "2027-05-14")
-			@RequestParam("date") LocalDate date) {
+			@RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 		return reservationReadService.findByDate(date);
 	}
 

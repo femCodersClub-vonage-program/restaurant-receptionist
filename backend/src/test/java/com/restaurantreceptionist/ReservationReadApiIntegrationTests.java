@@ -110,6 +110,18 @@ class ReservationReadApiIntegrationTests {
 						.value("Query parameter 'date' must be a valid calendar date in YYYY-MM-DD format."));
 	}
 
+	@Test
+	void localeSpecificDateFormatReturnsProblemDetails() throws Exception {
+		mockMvc.perform(get("/api/reservations").param("date", "5/14/27"))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.valueOf("application/problem+json")))
+				.andExpect(jsonPath("$.type").value("about:blank"))
+				.andExpect(jsonPath("$.title").value("Bad Request"))
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.detail")
+						.value("Query parameter 'date' must be a valid calendar date in YYYY-MM-DD format."));
+	}
+
 	private Reservation reservation(
 			LocalDate date, LocalTime time, DiningSession diningSession, short partySize) {
 		return new Reservation(
