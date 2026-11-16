@@ -1,8 +1,9 @@
 # Spec: Expose manual confirmed reservation creation
 
-> Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: pending assignment
-> Status: ready
-> Last updated: 2026-11-15
+> Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: `feature/28-manual-reservation-api`
+> Status: in-progress
+> Last updated: 2026-11-16
+> Contract: pending mentor approval
 
 ---
 
@@ -51,9 +52,117 @@ Use the #7 service as the single creation path. Fill in the contract before impl
 
 | Method | Route or event | Description |
 | --- | --- | --- |
-| POST | Pending mentor approval | Create a confirmed manual reservation. |
+| POST | `/api/reservations` | Create a confirmed manual reservation. |
 
-Document the required fields, response examples, validation format, and capacity-conflict status here when approved. Do not expose persistence entities directly.
+#### Proposed contract (pending mentor approval)
+
+**Route:** `POST /api/reservations` with an `application/json` body.
+
+The route creates a reservation resource and shares its path with the approved read contract (`GET /api/reservations?date=...`). It is not tied to the dashboard. The telephone flow calls `ReservationCreationService` directly and must not call this endpoint.
+
+**Request body:**
+
+```json
+{
+    "customerFirstName": "Fictional",
+    "customerLastName": "Guest",
+    "phoneNumber": "fictional-test-contact",
+    "reservationDate": "2027-05-14",
+    "arrivalTime": "21:00",
+    "partySize": 4
+}
+```
+
+| Field | Type | Format | Notes |
+|---|---|---|---|
+| `customerFirstName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
+| `customerLastName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
+| `phoneNumber` | string | Non-blank | No normalization or format policy is introduced. |
+| `reservationDate` | string | ISO-8601 date, `YYYY-MM-DD` | Must not be in the past. |
+| `arrivalTime` | string | Strict `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
+| `partySize` | integer | Whole number | Must be within the RN-01 range. |
+
+The client does not send a dining session or capacity value. The backend derives the session from `arrivalTime`, and #7 calculates capacity. Unknown properties are ignored, so a client-supplied `diningSession` has no effect.
+
+**Successful response:** `201 Created`
+
+```json
+{
+    "id": "00000000-0000-0000-0000-000000000001",
+    "diningSession": "DINNER"
+}
+```
+
+There is no `Location` header, because the MVP has no read-by-id endpoint. The frontend refreshes the dashboard through `GET /api/reservations?date=...`.
+
+**Validation error:** `400 Bad Request` using RFC 9457 Problem Details (`application/problem+json`), with the `field` and `reason` extensions:
+
+```json
+{
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400,
+    "detail": "The reservation request contains invalid data.",
+    "field": "PARTY_SIZE",
+    "reason": "OUT_OF_RANGE"
+}
+```
+
+| `field` | Request property |
+|---|---|
+| `FIRST_NAME` | `customerFirstName` |
+| `LAST_NAME` | `customerLastName` |
+| `PHONE_NUMBER` | `phoneNumber` |
+| `RESERVATION_DATE` | `reservationDate` |
+| `ARRIVAL_TIME` | `arrivalTime` |
+| `PARTY_SIZE` | `partySize` |
+
+| `reason` | Origin | Meaning |
+|---|---|---|
+| `MISSING` | #7 | The field is absent or blank. |
+| `PAST_DATE` | #7 | `reservationDate` is before today. |
+| `TIME_NOT_IN_FUTURE` | #7 | On today's date, `arrivalTime` is not later than now. |
+| `OUTSIDE_ARRIVAL_WINDOW` | #7 | `arrivalTime` is outside the RN-03 lunch and dinner windows. |
+| `OUT_OF_RANGE` | #7 | `partySize` is outside the RN-01 range. |
+| `MALFORMED` | HTTP adapter | The value cannot be parsed into the documented type or format. |
+
+`field` and `reason` reuse the #7 `ReservationField` and `InvalidData.Reason` values, so validation is not duplicated. When a value cannot be parsed (for example, `"reservationDate": "14/05/2027"`, `"arrivalTime": "21:00:00"`, or `"partySize": "four"`), #7 is never invoked. In that case the response uses `reason: "MALFORMED"` and the field resolved from the JSON property:
+
+```json
+{
+    "type": "about:blank",
+    "title": "Bad Request",
+    "status": 400,
+    "detail": "The reservation request contains invalid data.",
+    "field": "ARRIVAL_TIME",
+    "reason": "MALFORMED"
+}
+```
+
+If the body is not readable JSON, or the failing property cannot be identified, the response is `400 Bad Request` with `detail: "The request body is not readable."` and no `field` or `reason`.
+
+**Adapter-side checks:** the controller adds no business rules. It has only two checks of its own:
+
+1. Parsing errors produce `MALFORMED`, because they happen before #7 is reached.
+2. A missing or `null` `partySize` returns `PARTY_SIZE` / `MISSING` without invoking #7. The #7 command uses a primitive `int`, so a missing value cannot be passed through. The outcome reuses an existing #7 reason.
+
+**Insufficient capacity:** `409 Conflict` using Problem Details, with capacity extensions:
+
+```json
+{
+    "type": "about:blank",
+    "title": "Conflict",
+    "status": 409,
+    "detail": "The dining session does not have enough available capacity for the requested party size.",
+    "diningSession": "DINNER",
+    "availableCapacity": 3,
+    "requestedPartySize": 4
+}
+```
+
+Nothing is persisted on a `400` or `409` response. Capacity is checked and locked by #7 in the same transaction as persistence, so concurrent requests cannot oversell a service.
+
+**Data handling:** error responses and logs must not include names, phone numbers, or request bodies. Problem Details is proposed for this endpoint only and does not add a global exception handler.
 
 ### Frontend
 
