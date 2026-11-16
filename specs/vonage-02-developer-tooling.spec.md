@@ -1,6 +1,6 @@
 # Spec: Configure Vonage MCP and CLI developer tooling
 
-> Issue: [#27](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/27) | Branch: pending assignment
+> Issue: [#27](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/27) | Branch: `docs/27-vonage-tooling-setup`
 > Status: ready
 > Last updated: 2026-11-16
 
@@ -87,7 +87,7 @@ Not applicable to the restaurant UI.
 ## Dependencies and environment
 
 - [x] The assignee needs her own Vonage developer account and a compatible MCP client. The mentor has approved read-only setup verification using participants' own accounts.
-- [x] Creation or modification of applications, number linking, calls, and messages require separate approved work.
+- [x] Creating or modifying applications, changing or linking numbers, sending messages, and placing calls are outside the scope of this issue.
 - [ ] Coordinate with [Vonage contract research](vonage-01-contract-verification.spec.md) to avoid duplicate research notes.
 
 ## Notes

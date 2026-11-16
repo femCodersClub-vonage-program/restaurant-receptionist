@@ -104,8 +104,10 @@ Remove-Variable apiKey, apiSecretSecure, apiSecret
 **macOS Terminal**
 
 ```bash
-read -r -p "Vonage API key: " apiKey
-read -r -s -p "Vonage API secret: " apiSecret
+printf "Vonage API key: "
+IFS= read -r apiKey
+printf "Vonage API secret: "
+IFS= read -r -s apiSecret
 printf '\n'
 vonage auth set --api-key "$apiKey" --api-secret "$apiSecret"
 unset apiKey apiSecret
@@ -117,9 +119,9 @@ Check the CLI on either operating system:
 vonage balance
 ```
 
-This read-only command confirms the CLI credentials and displays your personal account balance; do not share its output. The CLI saves its configuration separately from the MCP config (`%USERPROFILE%\.vonage\config.json` on Windows, `~/.vonage/config.json` on macOS).
+This read-only command confirms the CLI credentials and displays your personal account balance; do not share its output. By default, the CLI saves its configuration separately from the MCP config (`%USERPROFILE%\.vonage\config.json` on Windows, `~/.vonage/config.json` on macOS). See Vonage's [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started) for its configuration locations and precedence.
 
-If `vonage auth set` reports **Invalid API Key or Secret**, check that the key and active secret belong to the same API Key entry in Dashboard > API Settings. A failed `auth set` does not save the CLI config, so `vonage balance` will then report that no config was found.
+If `vonage auth set` reports **Invalid API Key or Secret**, check that the key and active secret belong to the same API Key entry in Dashboard > API Settings. The official [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started) says credentials are checked before `auth set` commits them. If this is the first configuration and the command fails, no config is created, so `vonage balance` then reports that no config was found. If a config already existed, the failed command leaves it unchanged.
 
 ## Remove saved credentials if you stop using the tools
 
@@ -128,7 +130,7 @@ If `vonage auth set` reports **Invalid API Key or Secret**, check that the key a
 
 ## Scope of the checks
 
-Issue #27 authorizes read-only balance checks. Application or number creation/linking changes account state; sending SMS or placing calls may consume credits. None of those operations were used, and they are outside this issue.
+Issue #27 authorizes read-only balance checks and excludes application or number changes, SMS sends, and calls. Those operations were not used. No credit-consuming operation was performed.
 
 ## Validation status
 
