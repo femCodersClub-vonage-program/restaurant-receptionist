@@ -17,4 +17,4 @@ export type { InputProps } from "./Input";
 export { Select } from "./Select";
 export type { SelectProps } from "./Select";
 export { Table } from "./Table";
-export type { TableProps } from "./Table";
+export type { TableColumn, TableProps } from "./Table";
