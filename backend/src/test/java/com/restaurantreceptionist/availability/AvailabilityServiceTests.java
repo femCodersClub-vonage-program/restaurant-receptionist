@@ -114,4 +114,63 @@ class AvailabilityServiceTests {
 			.isEqualTo(new PartyFitResult.InvalidArrivalTime(invalidTime));
 		verifyNoInteractions(reservationRepository);
 	}
+
+	@Test
+	void offersDinnerWhenLunchIsRequestedAndDinnerHasEnoughPlaces() {
+		when(reservationRepository.sumConfirmedPartySize(DATE, DiningSession.DINNER)).thenReturn(10L);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, 4))
+			.isEqualTo(new SameDateAlternativeResult.Available(
+				new CapacitySummary(DiningSession.DINNER, 30, 10, 20)));
+		verify(reservationRepository).sumConfirmedPartySize(DATE, DiningSession.DINNER);
+		verifyNoMoreInteractions(reservationRepository);
+	}
+
+	@Test
+	void offersLunchWhenDinnerIsRequestedAndLunchHasEnoughPlaces() {
+		when(reservationRepository.sumConfirmedPartySize(DATE, DiningSession.LUNCH)).thenReturn(0L);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.DINNER, 6))
+			.isEqualTo(new SameDateAlternativeResult.Available(
+				new CapacitySummary(DiningSession.LUNCH, 30, 0, 30)));
+		verify(reservationRepository).sumConfirmedPartySize(DATE, DiningSession.LUNCH);
+		verifyNoMoreInteractions(reservationRepository);
+	}
+
+	@Test
+	void offersAlternativeWhenPartyExactlyFillsRemainingPlaces() {
+		when(reservationRepository.sumConfirmedPartySize(DATE, DiningSession.DINNER)).thenReturn(26L);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, 4))
+			.isEqualTo(new SameDateAlternativeResult.Available(
+				new CapacitySummary(DiningSession.DINNER, 30, 26, 4)));
+	}
+
+	@Test
+	void reportsNoAlternativeWhenPartyExceedsRemainingPlaces() {
+		when(reservationRepository.sumConfirmedPartySize(DATE, DiningSession.DINNER)).thenReturn(26L);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, 5))
+			.isEqualTo(new SameDateAlternativeResult.Unavailable(
+				new CapacitySummary(DiningSession.DINNER, 30, 26, 4), 5));
+		verify(reservationRepository).sumConfirmedPartySize(DATE, DiningSession.DINNER);
+		verifyNoMoreInteractions(reservationRepository);
+	}
+
+	@Test
+	void reportsNoAlternativeWhenOtherServiceIsFull() {
+		when(reservationRepository.sumConfirmedPartySize(DATE, DiningSession.LUNCH)).thenReturn(30L);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.DINNER, 1))
+			.isEqualTo(new SameDateAlternativeResult.Unavailable(
+				new CapacitySummary(DiningSession.LUNCH, 30, 30, 0), 1));
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = {-1, 0, 31})
+	void rejectsInvalidPartySizeWithoutCheckingAlternative(int partySize) {
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, partySize))
+			.isEqualTo(new SameDateAlternativeResult.InvalidPartySize(partySize));
+		verifyNoInteractions(reservationRepository);
+	}
 }
