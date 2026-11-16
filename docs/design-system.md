@@ -196,6 +196,68 @@ The shared composite set is:
 
 Use [Lucide](https://lucide.dev/) through the approved `lucide-react` package as the project's single icon library. Icons are decorative only when adjacent text already conveys the same meaning; otherwise they require an accessible name.
 
+Composite components are presentational. They do not calculate capacity, submit forms, or fetch data; features pass values in and handle those concerns outside the component.
+
+#### Header
+
+A page-level `<header>` with a single `h1` title, an optional supporting description, and an optional action area. Use it once per page; keep the primary action prominent and place secondary actions next to it.
+
+```tsx
+<Header
+  title="Reservations"
+  description="Manage reservations for the selected date."
+  actions={
+    <>
+      <Button variant="secondary">Refresh</Button>
+      <Button>New reservation</Button>
+    </>
+  }
+/>
+```
+
+#### FormField
+
+A labelled field wrapper that renders a control through a render-prop child. It automatically associates the label, help text, and error message with the control: the control receives a generated `id`, an `aria-describedby` referencing the help text or error, `aria-required` when `required`, and `aria-invalid` plus the `error` border when an `error` message is set. When `error` is present it replaces `helpText` so the user sees the problem clearly.
+
+```tsx
+<FormField
+  label="Customer name"
+  required
+  helpText="Name used for the reservation."
+>
+  {(props) => <Input {...props} placeholder="Jane Doe" />}
+</FormField>
+
+<FormField label="Phone number" required error="Enter a valid phone number.">
+  {(props) => <Input {...props} placeholder="612345678" />}
+</FormField>
+```
+
+#### Table
+
+An accessible data table with `scope="col"` header cells, an optional visually hidden `caption`, an explicit empty state, and horizontal scrolling when columns cannot fit a narrow viewport. Provide columns as header-plus-cell renderers, a stable `rowKey`, and an `emptyMessage`.
+
+```tsx
+<Table
+  caption="Lunch reservations"
+  columns={[
+    { key: "name", header: "Name", cell: (row) => row.name },
+    { key: "time", header: "Time", cell: (row) => row.time },
+  ]}
+  rows={rows}
+  rowKey={(row) => row.id}
+  emptyMessage="No reservations for this service yet."
+/>
+```
+
+#### CapacityIndicator
+
+A presentational indicator that states capacity in text: available and total places in the primary line, and occupied places as secondary text. The filled bar is a decorative, colour-neutral visual that never replaces the text. Pass all three computed values; the component does not derive them.
+
+```tsx
+<CapacityIndicator label="Lunch" total={30} occupied={12} available={18} />
+```
+
 ## Responsive behaviour
 
 - Start with a usable desktop dashboard and ensure it reflows for tablet and mobile widths.
