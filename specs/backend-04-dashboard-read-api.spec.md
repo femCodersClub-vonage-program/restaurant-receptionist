@@ -2,7 +2,7 @@
 
 > Issue: [#20](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/20) | Branch: `feature/20-dashboard-read-api`
 > Status: in-progress
-> Last updated: 2026-11-15
+> Last updated: 2026-11-16
 > Contract: approved by mentor
 
 ---
@@ -172,7 +172,7 @@ Provide distinguishable empty and error outcomes so #11 can render them accessib
 
 ### Manual verification
 
-- [ ] Run backend tests and inspect the documented endpoint locally.
+- [x] Run backend tests and inspect the documented endpoint locally.
 
 ## Dependencies and environment
 
