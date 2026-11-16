@@ -8,6 +8,8 @@ export { CapacityIndicator } from "./CapacityIndicator"
 export type { CapacityIndicatorProps } from "./CapacityIndicator"
 export { Card } from "./Card";
 export type { CardProps } from "./Card";
+export { FormField } from "./FormField";
+export type { FormFieldControlProps } from "./FormField";
 export { Header } from "./Header";
 export type { HeaderProps } from "./Header";
 export { Input } from "./Input";
