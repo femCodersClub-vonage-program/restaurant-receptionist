@@ -3,9 +3,9 @@ export type { AlertProps, AlertVariant } from "./Alert";
 export { Badge } from "./Badge";
 export type { BadgeProps, BadgeVariant } from "./Badge";
 export { Button } from "./Button";
-export type { ButtonProps, ButtonVariant } from "./Button"
-export { CapacityIndicator } from "./CapacityIndicator"
-export type { CapacityIndicatorProps } from "./CapacityIndicator"
+export type { ButtonProps, ButtonVariant } from "./Button";
+export { CapacityIndicator } from "./CapacityIndicator";
+export type { CapacityIndicatorProps } from "./CapacityIndicator";
 export { Card } from "./Card";
 export type { CardProps } from "./Card";
 export { FormField } from "./FormField";
