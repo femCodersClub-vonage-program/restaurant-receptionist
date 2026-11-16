@@ -254,6 +254,8 @@ An accessible data table with `scope="col"` header cells, an optional visually h
 
 A presentational indicator that states capacity in text: available and total places in the primary line, and occupied places as secondary text. The filled bar is a decorative, colour-neutral visual that never replaces the text. Pass all three computed values; the component does not derive them.
 
+The bar width is applied with a single inline `style={{ width }}` because it is a genuine runtime value derived from the occupied-to-total ratio; it cannot be expressed with the fixed token scale and is an accepted exception to the no-inline-style rule.
+
 ```tsx
 <CapacityIndicator label="Lunch" total={30} occupied={12} available={18} />
 ```
