@@ -1,8 +1,8 @@
 # Spec: Determine the alternative service on the same date
 
 > Issue: [#19](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/19) | Branch: `feature/19-same-date-service-alternative`
-> Status: ready
-> Last updated: 2026-11-10
+> Status: done
+> Last updated: 2026-11-16
 
 ---
 
@@ -18,9 +18,9 @@ Add a channel-agnostic application operation that checks the other dining sessio
 
 ### In scope
 
-- [ ] Resolve the opposite dining session and evaluate its capacity through #6.
-- [ ] Return a distinguishable available or unavailable result with the relevant capacity summary.
-- [ ] Test both directions, full services, and party-size boundaries.
+- [x] Resolve the opposite dining session and evaluate its capacity through #6.
+- [x] Return a distinguishable available or unavailable result with the relevant capacity summary.
+- [x] Test both directions, full services, and party-size boundaries.
 
 ### Out of scope
 
@@ -29,10 +29,10 @@ Add a channel-agnostic application operation that checks the other dining sessio
 
 ## Acceptance criteria
 
-- [ ] When dinner cannot fit a valid party, lunch on the same date is evaluated; the reverse also works.
-- [ ] When the other service has enough places, the result identifies it as an option without persisting a reservation.
-- [ ] When neither service fits, the result reports no same-date alternative and persists nothing.
-- [ ] Invalid party sizes are not treated as an availability failure.
+- [x] When dinner cannot fit a valid party, lunch on the same date is evaluated; the reverse also works.
+- [x] When the other service has enough places, the result identifies it as an option without persisting a reservation.
+- [x] When neither service fits, the result reports no same-date alternative and persists nothing.
+- [x] Invalid party sizes are not treated as an availability failure.
 
 ## Business rules and decisions
 
@@ -70,16 +70,16 @@ A later voice flow owns the phrasing and acceptance of the alternative.
 
 ### Automated
 
-- [ ] Unit tests cover lunch-to-dinner and dinner-to-lunch, enough and insufficient places, and invalid party sizes.
-- [ ] PostgreSQL-backed test verifies capacity comes from confirmed reservations if #6's integration coverage does not already establish this path.
+- [x] Unit tests cover lunch-to-dinner and dinner-to-lunch, enough and insufficient places, and invalid party sizes.
+- [x] PostgreSQL-backed test verifies capacity comes from confirmed reservations if #6's integration coverage does not already establish this path.
 
 ### Manual verification
 
-- [ ] Run backend tests.
+- [x] Run backend tests.
 
 ## Dependencies and environment
 
-- [ ] #6 must be merged. This issue is independent of #7.
+- [x] #6 must be merged. This issue is independent of #7.
 
 ## Notes
 
