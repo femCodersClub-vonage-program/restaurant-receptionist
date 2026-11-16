@@ -23,6 +23,7 @@ export interface ServiceSectionProps {
 type ReservationRow = {
   id: string;
   name: string;
+  phone: string;
   time: string;
   party: string;
   status: string;
@@ -30,6 +31,7 @@ type ReservationRow = {
 
 const reservationColumns: TableColumn<ReservationRow>[] = [
   { key: "name", header: "Name", cell: (row) => row.name },
+  { key: "phone", header: "Phone", cell: (row) => row.phone },
   { key: "time", header: "Time", cell: (row) => row.time },
   { key: "party", header: "Party", cell: (row) => row.party },
   { key: "status", header: "Status", cell: (row) => row.status },
