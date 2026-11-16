@@ -32,28 +32,16 @@ const reservations: DemoReservation[] = [
 export default function CompositeDemoPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-heading-lg">Composite UI components</h1>
-        <p className="text-foreground-muted">
-          A demonstration of the shared composite components and their states.
-        </p>
-      </div>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-heading-md">Header</h2>
-        <div className="rounded-surface border border-border bg-surface p-6">
-          <Header
-            title="Reservations"
-            description="Manage reservations for the selected date and service."
-            actions={
-              <>
-                <Button variant="secondary">Refresh</Button>
-                <Button>New reservation</Button>
-              </>
-            }
-          />
-        </div>
-      </section>
+      <Header
+        title="Composite UI components"
+        description="A demonstration of the shared composite components and their states."
+        actions={
+          <>
+            <Button variant="secondary">Refresh</Button>
+            <Button>New reservation</Button>
+          </>
+        }
+      />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-heading-md">FormField</h2>
