@@ -3,6 +3,7 @@ package com.restaurantreceptionist;
 import com.restaurantreceptionist.availability.AvailabilityService;
 import com.restaurantreceptionist.availability.CapacitySummary;
 import com.restaurantreceptionist.availability.PartyFitResult;
+import com.restaurantreceptionist.availability.SameDateAlternativeResult;
 import com.restaurantreceptionist.reservations.DiningSession;
 import com.restaurantreceptionist.reservations.Reservation;
 import com.restaurantreceptionist.reservations.ReservationRepository;
@@ -54,6 +55,17 @@ class AvailabilityServiceIntegrationTests {
 			.isEqualTo(new PartyFitResult.Fits(expectedCapacity));
 		assertThat(availabilityService.checkPartyFit(DATE, LocalTime.of(14, 0), 24))
 			.isEqualTo(new PartyFitResult.InsufficientCapacity(expectedCapacity, 24));
+	}
+
+	@Test
+	void findsSameDateAlternativeFromPersistedReservations() {
+		persistMixedReservations();
+		var expectedDinnerCapacity = new CapacitySummary(DiningSession.DINNER, 30, 8, 22);
+
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, 22))
+			.isEqualTo(new SameDateAlternativeResult.Available(expectedDinnerCapacity));
+		assertThat(availabilityService.findSameDateAlternative(DATE, DiningSession.LUNCH, 23))
+			.isEqualTo(new SameDateAlternativeResult.Unavailable(expectedDinnerCapacity, 23));
 	}
 
 	private void persistMixedReservations() {

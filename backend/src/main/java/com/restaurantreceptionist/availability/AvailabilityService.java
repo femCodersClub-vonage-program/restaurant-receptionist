@@ -39,7 +39,7 @@ public class AvailabilityService {
 			return new PartyFitResult.InvalidArrivalTime(arrivalTime);
 		}
 
-		if (partySize < ServiceCapacity.MIN_PARTY_SIZE || partySize > ServiceCapacity.GUESTS_PER_SERVICE) {
+		if (!isValidPartySize(partySize)) {
 			return new PartyFitResult.InvalidPartySize(partySize);
 		}
 
@@ -48,5 +48,25 @@ public class AvailabilityService {
 			return new PartyFitResult.InsufficientCapacity(capacity, partySize);
 		}
 		return new PartyFitResult.Fits(capacity);
+	}
+
+	public SameDateAlternativeResult findSameDateAlternative(
+		LocalDate reservationDate, DiningSession requestedSession, int partySize) {
+		Objects.requireNonNull(reservationDate, "reservationDate must not be null");
+		Objects.requireNonNull(requestedSession, "requestedSession must not be null");
+
+		if (!isValidPartySize(partySize)) {
+			return new SameDateAlternativeResult.InvalidPartySize(partySize);
+		}
+
+		CapacitySummary capacity = calculateCapacity(reservationDate, requestedSession.opposite());
+		if (partySize > capacity.availableCapacity()) {
+			return new SameDateAlternativeResult.Unavailable(capacity, partySize);
+		}
+		return new SameDateAlternativeResult.Available(capacity);
+	}
+
+	private static boolean isValidPartySize(int partySize) {
+		return partySize >= ServiceCapacity.MIN_PARTY_SIZE && partySize <= ServiceCapacity.GUESTS_PER_SERVICE;
 	}
 }
