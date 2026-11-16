@@ -42,6 +42,11 @@ class OpenApiDocumentationIntegrationTests {
 				.andExpect(jsonPath("$.info.version").value("0.0.1-SNAPSHOT"))
 				.andExpect(jsonPath("$.info.description").value(API_DESCRIPTION))
 				.andExpect(jsonPath("$.paths").isMap())
+				.andExpect(jsonPath("$.paths['/api/reservations'].get.parameters[0].name").value("date"))
+				.andExpect(jsonPath("$.paths['/api/reservations'].get.parameters[0].required").value(true))
+				.andExpect(jsonPath("$.paths['/api/reservations'].get.responses['200']").exists())
+				.andExpect(jsonPath("$.paths['/api/reservations'].get.responses['400'].content['application/problem+json']")
+						.exists())
 				.andExpect(jsonPath("$.paths['/openapi-smoke-test'].get").exists());
 	}
 
