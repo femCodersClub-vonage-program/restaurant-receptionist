@@ -10,7 +10,6 @@ export function LoadingState({
   return (
     <div
       role="status"
-      aria-live="polite"
       className="flex items-center gap-3 rounded-surface border border-border bg-surface p-6 text-foreground-muted"
     >
       <LoaderCircle
