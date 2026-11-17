@@ -1,8 +1,8 @@
 # Spec: Add manual reservation creation to the dashboard
 
-> Issue: [#29](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/29) | Branch: pending assignment
+> Issue: [#29](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/29)
 > Status: ready
-> Last updated: 2026-11-15
+> Last updated: 2026-11-17
 
 ---
 
@@ -25,7 +25,7 @@ Add an accessible form to the staff dashboard that submits the approved manual-c
 
 ### Out of scope
 
-- [ ] Browser-side source-of-truth capacity calculation, business-duplicate rules, SMS settings, Voice flow, cancellation, or modification.
+- [ ] Browser-side source-of-truth capacity calculation, business-duplicate rules, manual SMS eligibility control in this published issue, Voice flow, cancellation, or modification.
 - [ ] New authentication, real-time updates, or speculative form fields.
 
 ## Acceptance criteria
@@ -40,7 +40,7 @@ Add an accessible form to the staff dashboard that submits the approved manual-c
 
 - Business rules: [RN-01](../docs/business-rules.md#rn-01-capacity-by-service), [RN-03](../docs/business-rules.md#rn-03-reservation-arrival-windows), [RN-07](../docs/business-rules.md#rn-07-staff-dashboard-and-manual-reservations).
 - Related ADRs: [ADR-002](../docs/adr/002-establish-initial-repository-layout.md).
-- Open questions: none for the form beyond the approved API contract. Any change to phone policy or manual SMS handling belongs to mentor-approved rules and follow-up work.
+- Open questions: none for this published form slice beyond the approved API contract. RN-08 approves Spanish contact numbers and a shared SMS eligibility policy; adding the simple manual eligibility control and wiring its notification trigger requires reviewed follow-up scope after the telephone journey is validated.
 
 ## Technical design
 
