@@ -1,7 +1,7 @@
 # Spec: Expose manual confirmed reservation creation
 
 > Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: `feature/28-manual-reservation-api`
-> Status: in-progress
+> Status: approved by mentor
 > Last updated: 2026-11-17
 > Contract: pending mentor approval
 
@@ -19,7 +19,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 ### In scope
 
-- [ ] Define and approve the POST route, request shape, success response, validation errors, and insufficient-capacity response.
+- [x] Define and approve the POST route, request shape, success response, validation errors, and insufficient-capacity response.
 - [ ] Map first and last name, phone, date, arrival time, and party size to the #7 application command without accepting a client-supplied service or capacity.
 - [ ] Return a distinguishable outcome for successful persistence, invalid data, and insufficient capacity.
 - [ ] Add controller and PostgreSQL-backed integration tests; document the implemented contract in generated OpenAPI.
@@ -42,7 +42,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 - Business rules: [RN-01](../docs/business-rules.md#rn-01-capacity-by-service), [RN-03](../docs/business-rules.md#rn-03-reservation-arrival-windows), [RN-07](../docs/business-rules.md#rn-07-staff-dashboard-and-manual-reservations).
 - Related ADRs: [ADR-006](../docs/adr/006-add-generated-openapi-documentation.md).
-- Open questions: exact HTTP contract requires mentor approval. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
+- Open questions: none for the approved  HTTP contract. RN-08 phone-number validatioin is a separate shared-service follow-up. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
 
 ## Technical design
 
@@ -54,7 +54,7 @@ Use the #7 service as the single creation path. Fill in the contract before impl
 | --- | --- | --- |
 | POST | `/api/reservations` | Create a confirmed manual reservation. |
 
-#### Proposed contract (pending mentor approval)
+#### Mentor-approved contract
 
 **Route:** `POST /api/reservations` with an `application/json` body.
 
@@ -77,7 +77,7 @@ The route creates a reservation resource and shares its path with the approved r
 |---|---|---|---|
 | `customerFirstName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
 | `customerLastName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
-| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. A follow-up on #7 is pending mentor decision. |
+| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. RN-08 validation is a separate-service follow-up; this endpoint inherits it from `ReservationCreationService` once merged. |
 | `reservationDate` | string | Strict ISO-8601 calendar date, `YYYY-MM-DD` | Must not be in the past. |
 | `arrivalTime` | string | Strict 24-hour `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
 | `partySize` | integer | Whole number | Must be within the RN-01 range. |
@@ -221,8 +221,8 @@ Return stable, understandable error categories so the form can associate errors 
 
 ## Dependencies and environment
 
-- [ ] Blocked by [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) being merged.
-- [ ] Mentor approves the HTTP contract in this spec before implementation starts.
+- [x] Blocked by [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) being merged.
+- [x] Mentor approves the HTTP contract in this spec before implementation starts.
 
 ## Notes
 
