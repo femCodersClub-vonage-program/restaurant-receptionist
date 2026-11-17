@@ -1,9 +1,9 @@
 # Spec: Expose manual confirmed reservation creation
 
 > Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: `feature/28-manual-reservation-api`
-> Status: approved by mentor
+> Status: in-progress
 > Last updated: 2026-11-17
-> Contract: pending mentor approval
+> Contract: approved by mentor
 
 ---
 
@@ -42,7 +42,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 - Business rules: [RN-01](../docs/business-rules.md#rn-01-capacity-by-service), [RN-03](../docs/business-rules.md#rn-03-reservation-arrival-windows), [RN-07](../docs/business-rules.md#rn-07-staff-dashboard-and-manual-reservations).
 - Related ADRs: [ADR-006](../docs/adr/006-add-generated-openapi-documentation.md).
-- Open questions: none for the approved  HTTP contract. RN-08 phone-number validatioin is a separate shared-service follow-up. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
+- Open questions: none for the approved HTTP contract. RN-08 phone-number validation is a separate shared-service follow-up. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
 
 ## Technical design
 
@@ -77,7 +77,7 @@ The route creates a reservation resource and shares its path with the approved r
 |---|---|---|---|
 | `customerFirstName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
 | `customerLastName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
-| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. RN-08 validation is a separate-service follow-up; this endpoint inherits it from `ReservationCreationService` once merged. |
+| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. RN-08 validation is a separate shared-service follow-up; this endpoint inherits it from `ReservationCreationService` once merged. |
 | `reservationDate` | string | Strict ISO-8601 calendar date, `YYYY-MM-DD` | Must not be in the past. |
 | `arrivalTime` | string | Strict 24-hour `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
 | `partySize` | integer | Whole number | Must be within the RN-01 range. |
