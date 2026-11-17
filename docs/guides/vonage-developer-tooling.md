@@ -8,11 +8,11 @@ Neither tool automatically loads credentials from the project's `.env`; configur
 
 ## 1. Configure the Vonage MCP server
 
-Each AI agent reads its own MCP configuration format and location; there is no universal MCP config file. Follow your agent's setup instructions. For VS Code Copilot, the personal config is `~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`). See Vonage's [Tooling MCP installation guide](https://developer.vonage.com/en/mcp-server/how-to-guides/install-tooling-mcp-server); the client-specific config format may differ.
+Each MCP client has its own configuration location and format; there is no universal MCP config file. The configuration below is specifically for **GitHub Copilot CLI**: it uses the personal file `~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`) with a top-level `mcpServers` object. This is not the MCP configuration for Copilot in VS Code. If you use VS Code or another client, follow that client's setup instructions and configure the Vonage server in its supported format. See Vonage's [Tooling MCP installation guide](https://developer.vonage.com/en/mcp-server/how-to-guides/install-tooling-mcp-server).
 
 Do not add a repository-root `.mcp.json`. Keep the MCP configuration in your personal agent config.
 
-### Open or create the Copilot config
+### Open or create the GitHub Copilot CLI config
 
 **Windows PowerShell**
 
@@ -73,7 +73,7 @@ Keep the API secret only in your personal config, not in source control or share
 
 ## 2. Check the MCP connection
 
-Save the config and restart/reload the AI agent. Ask the configured agent:
+Save the config and start or restart GitHub Copilot CLI. Ask it:
 
 > Use the Vonage MCP server to check my account balance.
 
@@ -119,7 +119,7 @@ Check the CLI on either operating system:
 vonage balance
 ```
 
-This read-only command confirms the CLI credentials and displays your personal account balance; do not share its output. By default, the CLI saves its configuration separately from the MCP config (`%USERPROFILE%\.vonage\config.json` on Windows, `~/.vonage/config.json` on macOS). See Vonage's [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started) for its configuration locations and precedence.
+This read-only command confirms the CLI credentials and displays your personal account balance; do not share its output. The CLI configuration precedence is: command-line flags first, then a `.vonagerc` in the current working directory, then the global config (`%USERPROFILE%\.vonage\config.json` on Windows, `~/.vonage/config.json` on macOS). Therefore, a project-local `.vonagerc` can override the global values. For this project, do not create or commit a repository-local `.vonagerc`; keep personal credentials in the global config. See Vonage's [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started) for the documented precedence.
 
 If `vonage auth set` reports **Invalid API Key or Secret**, check that the key and active secret belong to the same API Key entry in Dashboard > API Settings. The official [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started) says credentials are checked before `auth set` commits them. If this is the first configuration and the command fails, no config is created, so `vonage balance` then reports that no config was found. If a config already existed, the failed command leaves it unchanged.
 

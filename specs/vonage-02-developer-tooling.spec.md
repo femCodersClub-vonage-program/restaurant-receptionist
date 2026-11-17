@@ -44,7 +44,7 @@ Install and configure the Vonage Server API Bindings (Tooling) MCP server and Vo
 
 - Business rules: not applicable to developer tooling. The resulting research supports [RN-06](../docs/business-rules.md#rn-06-confirmation-messages) and the Voice journey.
 - Related ADRs: none expected; any runtime or security architecture change requires separate mentor approval.
-- Open questions: the assignee selects and records a compatible local MCP client. Each participant uses her own Vonage developer account; no shared project account is required for this issue.
+- The guide documents the GitHub Copilot CLI MCP configuration format. Participants using VS Code or another MCP client must follow that client's supported configuration format. Each participant uses her own Vonage developer account; no shared project account is required for this issue.
 
 ## Technical design
 
