@@ -1,8 +1,8 @@
 # Spec: Guided telephone reservation journey
 
 > Related issues: [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35), [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36), [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37)
-> Status: draft; all related issues are planned and blocked pending provider contracts and relevant product decisions
-> Last updated: 2026-11-15
+> Status: draft; all related issues are planned and blocked pending provider contracts and implementation review
+> Last updated: 2026-11-17
 
 ---
 
@@ -29,10 +29,11 @@ These published issues define provisional delivery boundaries. Review and refine
 ### In scope
 
 - [ ] Handle the approved incoming-call journey using verified Voice API contracts.
-- [ ] Capture first and last name, phone number, reservation date, arrival time, and party size through guided prompts.
+- [ ] Capture first and last name, a caller-confirmed Spanish contact number and its SMS eligibility, reservation date, arrival time, and party size through guided prompts. Ask for the contact number even when caller ID is present.
+- [ ] Interpret "today" and "tomorrow" using `Europe/Madrid`; request a concrete, unambiguous date for other expressions, asking for the year if necessary. Accept today or a future date without a maximum booking horizon and read back the full interpreted date.
 - [ ] Validate date, time, service, and capacity using the shared backend rules; do not make the Voice channel a second source of truth.
-- [ ] Allow one initial question and up to two retries per field, and permit a guided correction of one field at a time followed by revalidation and another summary.
-- [ ] Offer the other service on the same date when the requested service cannot fit the party; ask for another date if the alternative is declined or unavailable.
+- [ ] Allow one initial question and up to two retries per field. Permit at most two successful one-field correction rounds after the initial summary, each followed by revalidation and another summary; end without persistence on a third correction request.
+- [ ] Offer the other service on the same date when the requested service cannot fit the party; allow at most two caller-proposed alternative dates after the initial date. A same-date service offer does not consume an alternative date.
 - [ ] Require explicit affirmative confirmation before calling the #7 confirmed-reservation service. Handle final capacity loss without false confirmation.
 - [ ] Avoid duplicate creation from repeated webhooks or confirmations and avoid creation after pre-persistence abandonment.
 - [ ] After successful persistence, hand off to the separately specified notification journey without treating SMS failure as reservation failure.
@@ -42,7 +43,7 @@ These published issues define provisional delivery boundaries. Review and refine
 - [ ] Conversational AI, DTMF, automatic date search, complex natural-language date handling, and post-MVP cancellation or modification.
 - [ ] Reimplementing the capacity or transactional persistence logic owned by #6 and #7.
 - [ ] SMS request or status-callback implementation, which belong to the [notification journey](notifications-01-persistence.spec.md).
-- [ ] Inventing a fallback for unsupported Spanish speech or a policy for hidden caller IDs before mentor decisions.
+- [ ] Inventing a fallback for unsupported Spanish speech before mentor review of #26 findings. Caller-ID and contact-number policy is approved in RN-08.
 
 ## Acceptance scenarios to refine after #26
 
@@ -50,14 +51,16 @@ These published issues define provisional delivery boundaries. Review and refine
 - [ ] A full requested service leads to the RN-02 same-date alternative through #19; final confirmation still revalidates capacity.
 - [ ] An invalid field, silence, or unrecognised input consumes only that field's allowed attempts; the third failed attempt ends the call without persistence.
 - [ ] A single-field correction updates the summary and revalidates affected rules before another explicit confirmation.
+- [ ] Two correction rounds are allowed; a third request ends without persistence. Two alternative dates are allowed after the initial date; no accepted option ends without persistence.
+- [ ] A hidden or incorrect caller ID does not block a reservation when the caller supplies and confirms a valid contact number. An unknown or negative SMS-capability answer does not block confirmation or trigger a message; correcting the number requires a new capability answer.
 - [ ] A repeated webhook or confirmation does not create a second reservation; a hang-up before persistence creates none.
 - [ ] Backend or provider failure is distinguished from invalid caller input and never produces a false confirmation.
 
 ## Business rules and decisions
 
-- Business rules: [RN-01 to RN-06](../docs/business-rules.md), especially RN-02, RN-04, and RN-05.
+- Business rules: [RN-01 to RN-06 and RN-08](../docs/business-rules.md), especially RN-02 to RN-05 and RN-08.
 - Related services: [#6](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/6), [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7), and [#19](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/19).
-- Open product decisions remain with the mentor: booking horizon and relative dates, hidden or unusable caller numbers, business duplicates, and limits for correction and alternative rounds. Apply only decisions relevant to a proposed slice before that slice starts.
+- The mentor has approved no maximum booking horizon for the MVP, bounded date expressions, contact-number and SMS eligibility policy, two correction rounds, two alternative dates, and no business-duplicate restriction. These are separate from provider-contract verification and do not make a blocked slice ready for implementation.
 - Open provider questions belong to #26: Spanish speech capture/playback, webhook authentication and retries, input/error payloads, event identifiers, and test prerequisites. Distinguish documented behaviour from local testing.
 
 ## Technical design pending research

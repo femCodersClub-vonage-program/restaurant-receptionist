@@ -2,7 +2,7 @@
 
 > Issue: [#4](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/4) | Branch: `feature/4-initial-persistence`
 > Status: done
-> Last updated: 2026-11-10
+> Last updated: 2026-11-17
 
 ---
 
@@ -46,7 +46,7 @@ Create the first Flyway migration and the minimal Spring Data JPA persistence mo
 - Open questions or assumptions:
   - This work stores only confirmed reservations. The first supported reservation status is `CONFIRMED`.
   - Customer name and phone number belong to the reservation record for this MVP; they do not define a customer identity.
-  - Telephone normalization, hidden caller IDs, and business-duplicate behaviour remain open product decisions.
+  - This initial persistence slice did not decide telephone normalization, hidden caller IDs, or business duplicates. RN-08 subsequently set the contact-number policy, and RN-05 allows separate confirmed calls with the same contact details while requiring technical idempotency.
 
 ## Technical design
 
