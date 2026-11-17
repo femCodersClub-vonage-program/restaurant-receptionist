@@ -8,7 +8,7 @@
 
 ## Problem
 
-RN-06 and RN-08 require an SMS request after a confirmed reservation is persisted only when its contact number can receive SMS. A reservation without an SMS-capable number remains confirmed and records why no SMS was requested. Request acceptance is distinct from delivery. The initial reservation table has no notification record or status. Provider states and identifiers still need verification.
+RN-06 and RN-08 require an SMS request after a confirmed reservation is persisted only when the customer confirms its contact number can receive SMS. A reservation remains confirmed when the number cannot receive SMS or its capability is unknown, and records why no SMS was requested. Request acceptance is distinct from delivery. The initial reservation table has no notification record or status. Provider states and identifiers still need verification.
 
 ## Proposed solution
 
@@ -33,7 +33,7 @@ The scope and acceptance criteria in this section describe the published #30 per
 - [ ] Propose and approve the notification entity/table fields, allowed state transitions, and relationship to a reservation using the verified Messages contract.
 - [ ] Persist a known request state, provider identifier when returned, and failure category or safe reason when available.
 - [ ] Keep a confirmed reservation intact when a notification is failed or undeliverable.
-- [ ] Incorporate the approved distinction between no SMS requested and a failed request or delivery into the reviewed #30 state mapping and issue scope. The exact persistence representation awaits #26.
+- [ ] Incorporate the approved distinction among no SMS requested because the number cannot receive it, no SMS requested because capability is unknown, and a failed request or delivery into the reviewed #30 state mapping and issue scope. The exact persistence representation awaits #26.
 - [ ] Add a new Flyway migration, JPA mapping/repository, and PostgreSQL-backed tests for constraints and retrieval by reservation/provider identifier.
 
 ### Out of scope
@@ -54,7 +54,7 @@ The scope and acceptance criteria in this section describe the published #30 per
 
 ### SMS request after confirmation
 
-- Trigger only after a telephone reservation has been persisted as confirmed through #7 and the confirmed contact number can receive SMS. Record a no-request reason for a confirmed reservation whose contact number cannot receive SMS. Do not request a message after rejected, abandoned, or unconfirmed attempts.
+- Trigger only after a telephone reservation has been persisted as confirmed through #7 and the customer confirms that the contact number can receive SMS. Record the no-request reason when the number cannot receive SMS or its capability is unknown. Do not request a message after rejected, abandoned, or unconfirmed attempts.
 - Use the approved persistence operations from #30 to record a request attempt and its known outcome. Distinguish provider acceptance from recipient delivery.
 - Keep the reservation confirmed if the provider request fails, times out, or has an ambiguous outcome. Record a safe diagnostic state without assuming a retry policy.
 - Define the exact Messages request, authentication, response mapping, and correlation from the completed #26 research before implementation. Manual reservations follow the same approved product policy, but their SMS trigger is later work after the telephone journey and needs reviewed issue scope.

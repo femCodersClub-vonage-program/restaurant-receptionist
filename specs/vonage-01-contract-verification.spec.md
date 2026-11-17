@@ -1,6 +1,6 @@
 # Spec: Verify Vonage contracts for the MVP
 
-> Issue: [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) | Branch: pending assignment
+> Issue: [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26)
 > Status: ready
 > Last updated: 2026-11-17
 
@@ -29,7 +29,7 @@ Research only the Vonage capabilities needed for the approved reservation journe
 
 - [ ] Repeating the general Voice learning path or cataloguing all Vonage products.
 - [ ] Production code, SDK or dependency additions, application configuration changes, or sending live traffic without mentor authorization.
-- [ ] Deciding restaurant product rules or deployment architecture. The mentor has resolved the booking horizon, contact-number policy, bounded call flow, and absence of a business-duplicate restriction; this issue verifies provider contracts.
+- [ ] Deciding restaurant product rules or deployment architecture. The mentor has resolved the MVP booking horizon as unrestricted for future dates, along with the contact-number policy, bounded call flow, and absence of a business-duplicate restriction; this issue verifies provider contracts.
 
 ## Acceptance criteria
 

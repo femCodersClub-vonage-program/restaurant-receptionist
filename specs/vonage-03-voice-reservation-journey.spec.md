@@ -30,7 +30,7 @@ These published issues define provisional delivery boundaries. Review and refine
 
 - [ ] Handle the approved incoming-call journey using verified Voice API contracts.
 - [ ] Capture first and last name, a caller-confirmed Spanish contact number and its SMS eligibility, reservation date, arrival time, and party size through guided prompts. Ask for the contact number even when caller ID is present.
-- [ ] Interpret "today" and "tomorrow" using `Europe/Madrid`; request a concrete, unambiguous date for other expressions, asking for the year if necessary. Accept dates through day 30 inclusive and read back the full interpreted date.
+- [ ] Interpret "today" and "tomorrow" using `Europe/Madrid`; request a concrete, unambiguous date for other expressions, asking for the year if necessary. Accept today or a future date without a maximum booking horizon and read back the full interpreted date.
 - [ ] Validate date, time, service, and capacity using the shared backend rules; do not make the Voice channel a second source of truth.
 - [ ] Allow one initial question and up to two retries per field. Permit at most two successful one-field correction rounds after the initial summary, each followed by revalidation and another summary; end without persistence on a third correction request.
 - [ ] Offer the other service on the same date when the requested service cannot fit the party; allow at most two caller-proposed alternative dates after the initial date. A same-date service offer does not consume an alternative date.
@@ -52,7 +52,7 @@ These published issues define provisional delivery boundaries. Review and refine
 - [ ] An invalid field, silence, or unrecognised input consumes only that field's allowed attempts; the third failed attempt ends the call without persistence.
 - [ ] A single-field correction updates the summary and revalidates affected rules before another explicit confirmation.
 - [ ] Two correction rounds are allowed; a third request ends without persistence. Two alternative dates are allowed after the initial date; no accepted option ends without persistence.
-- [ ] A hidden or incorrect caller ID does not block a reservation when the caller supplies and confirms a valid contact number; a non-SMS-capable contact number does not block confirmation.
+- [ ] A hidden or incorrect caller ID does not block a reservation when the caller supplies and confirms a valid contact number. An unknown or negative SMS-capability answer does not block confirmation or trigger a message; correcting the number requires a new capability answer.
 - [ ] A repeated webhook or confirmation does not create a second reservation; a hang-up before persistence creates none.
 - [ ] Backend or provider failure is distinguished from invalid caller input and never produces a false confirmation.
 
@@ -60,7 +60,7 @@ These published issues define provisional delivery boundaries. Review and refine
 
 - Business rules: [RN-01 to RN-06 and RN-08](../docs/business-rules.md), especially RN-02 to RN-05 and RN-08.
 - Related services: [#6](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/6), [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7), and [#19](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/19).
-- The mentor has approved the 30-day horizon, bounded date expressions, contact-number and SMS eligibility policy, two correction rounds, two alternative dates, and no business-duplicate restriction. These are separate from provider-contract verification and do not make a blocked slice ready for implementation.
+- The mentor has approved no maximum booking horizon for the MVP, bounded date expressions, contact-number and SMS eligibility policy, two correction rounds, two alternative dates, and no business-duplicate restriction. These are separate from provider-contract verification and do not make a blocked slice ready for implementation.
 - Open provider questions belong to #26: Spanish speech capture/playback, webhook authentication and retries, input/error payloads, event identifiers, and test prerequisites. Distinguish documented behaviour from local testing.
 
 ## Technical design pending research

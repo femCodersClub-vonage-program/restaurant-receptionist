@@ -31,7 +31,7 @@ This document records the approved functional rules for the Restaurant Reception
 - These are reservation arrival windows, not restaurant closing hours. Both endpoints are inclusive: lunch accepts arrival times from 13:00 through 16:00, and dinner accepts arrival times from 20:00 through 23:30. Arrival times use minute precision.
 - The stored arrival time identifies the service but does not change capacity within that service.
 - A requested time outside both windows is invalid. Explain the valid windows and treat the value as an invalid input attempt for the arrival-time field.
-- The fictional restaurant uses the `Europe/Madrid` time zone. A reservation date must be between today and 30 calendar days after today, inclusive, in that time zone. The same window applies to telephone and manual reservations and to alternative dates.
+- The fictional restaurant uses the `Europe/Madrid` time zone. A reservation date must be today or a future date in that time zone. The MVP has no maximum booking horizon; a limit may be considered after the MVP. The same date rule applies to telephone and manual reservations and to alternative dates.
 - In the telephone flow, interpret "today" and "tomorrow" using the restaurant's local date. For other requests, obtain an unambiguous calendar date, asking for the year when needed. Ask for a concrete date rather than interpreting weekday phrases such as "next Friday". Read back the complete interpreted date before final confirmation. The feasibility of capturing these expressions by speech remains subject to #26.
 - For a reservation on the current local date, the arrival time must be strictly later than the current local time at final validation before persistence. A time that is current or already passed is invalid.
 
@@ -60,7 +60,7 @@ This document records the approved functional rules for the Restaurant Reception
 
 - For telephone reservations, after the caller's affirmative confirmation, revalidate capacity and persist the reservation before confirming it by voice.
 - If final revalidation finds that capacity is no longer available, do not persist or confirm the reservation. Continue with the alternatives in RN-02.
-- Request an SMS confirmation through Vonage Messages API only after persistence and only when the confirmed contact number can receive SMS under RN-08. A confirmed reservation without an SMS-capable contact number remains valid; record that no SMS was requested and why.
+- Request an SMS confirmation through Vonage Messages API only after persistence and only when the customer confirms that the contact number can receive SMS under RN-08. A confirmed reservation remains valid when the number cannot receive SMS or its SMS capability is unknown; record why no SMS was requested.
 - A message failure must not delete or cancel a confirmed reservation.
 - Persist the notification's known status and failure reason, when available. Distinguish an SMS deliberately not requested from a request or delivery failure.
 - Distinguish a request accepted by Vonage from confirmed delivery to the recipient.
@@ -84,10 +84,11 @@ This document records the approved functional rules for the Restaurant Reception
 - During a telephone call, ask the caller for the contact number even if caller ID is available. A hidden, missing, or unusable caller ID must not prevent the caller from supplying a number. Do not treat caller ID alone as the confirmed contact number.
 - Ask whether the supplied contact number can receive SMS. Do not infer this from caller ID or from the device used to place the call. The customer may provide a different contact number.
 - An invalid or unintelligible contact number follows the per-field attempt limit in RN-05. Do not create a reservation without a confirmed contact number.
-- Read back the contact number with the other reservation details before final confirmation. A corrected number follows RN-04.
+- Read back the contact number with the other reservation details before final confirmation. A corrected number follows RN-04 and requires a new answer about whether that number can receive SMS; do not reuse the answer for the previous number.
 - A confirmed reservation is valid whether or not its contact number can receive SMS. If the customer says it cannot, do not request an SMS and record that reason. If it can, apply RN-06 after persistence; a send or delivery failure does not affect the reservation.
+- If the customer does not know whether the confirmed contact number can receive SMS, keep the reservation valid, do not request an SMS, and record that SMS capability is unknown. Do not repeat the eligibility question solely to obtain a yes-or-no answer.
 - Do not promise that an SMS has been delivered when confirming the reservation by voice.
-- For a manual reservation, staff record whether the contact number can receive SMS. Apply the same post-persistence policy when manual notifications are implemented; the telephone journey has priority for development and demonstration.
+- For a manual reservation, staff record whether the contact number can receive SMS or whether this is unknown. Apply the same post-persistence policy when manual notifications are implemented; the telephone journey has priority for development and demonstration.
 
 ## Priority acceptance scenarios
 
@@ -103,6 +104,7 @@ This document records the approved functional rules for the Restaurant Reception
 10. A manually created reservation follows the same capacity validation as a telephone reservation.
 11. A reservation with a contact number that cannot receive SMS remains confirmed, with a recorded reason for not requesting a message.
 12. Two separately confirmed calls may create reservations with the same contact number while capacity remains; a repeated confirmation for one call creates only one reservation.
+13. Unknown SMS capability does not prevent confirmation and does not trigger an SMS request. Correcting a contact number requires a new SMS-capability answer.
 
 ## Open functional decisions
 

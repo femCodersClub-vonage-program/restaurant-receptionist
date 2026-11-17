@@ -70,7 +70,7 @@ Each reservation requires a confirmed Spanish contact number. In the telephone f
 ### Date and time validity
 
 - The fictional restaurant uses the `Europe/Madrid` time zone.
-- A reservation date must be between today and 30 calendar days later, inclusive, in that time zone.
+- A reservation date must be today or a future date in that time zone. The MVP has no maximum booking horizon; a limit may be considered after the MVP.
 - The telephone flow interprets "today" and "tomorrow" in the restaurant's time zone. For other requests it obtains an unambiguous date, asking for the year when needed; weekday phrases require a concrete date from the caller. The complete date is read back before final confirmation. Speech-capture feasibility remains subject to #26.
 - For a reservation on the current local date, the arrival time must be strictly later than the local time at final validation before persistence. A time that is current or already passed is invalid.
 
@@ -125,7 +125,7 @@ The MVP does not automatically search for available dates or offer another time 
 
 ### Notifications
 
-- After persistence, request a reservation confirmation through Vonage Messages API only when the confirmed contact number can receive SMS. Otherwise retain the confirmed reservation and record why no SMS was requested.
+- After persistence, request a reservation confirmation through Vonage Messages API only when the customer confirms that the contact number can receive SMS. If the number cannot receive SMS or its capability is unknown, retain the confirmed reservation without requesting a message and record the reason.
 - If final capacity revalidation fails, do not persist or confirm the reservation; follow the alternatives flow.
 - A notification failure must not delete or cancel the reservation.
 - Persist the notification's known state and any failure reason.
