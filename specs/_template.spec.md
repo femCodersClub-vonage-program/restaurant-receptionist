@@ -43,7 +43,7 @@
 
 ## Business rules and decisions
 
-<!-- Link to the applicable RN-01 to RN-07 rule, ADR, or verified integration decision. -->
+<!-- Link to the applicable business rule, ADR, or verified integration decision. -->
 
 - Business rules: [link or not applicable]
 - Related ADRs: [link or not applicable]

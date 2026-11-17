@@ -21,7 +21,7 @@ Demonstrate a complete telephone reservation journey for one fictional restauran
 3. Validate the requested time and capacity.
 4. Obtain explicit confirmation from the customer.
 5. Persist the reservation without duplicates or overselling capacity.
-6. Request an SMS confirmation.
+6. Request an SMS confirmation when the confirmed contact number can receive SMS.
 7. Display the reservation and capacity in a basic staff dashboard, including manual reservation creation through the same backend validation rules.
 
 ## Scope
@@ -65,11 +65,14 @@ Each reservation captures:
 - Arrival time.
 - Party size.
 
+Each reservation requires a confirmed Spanish contact number. In the telephone flow, ask for that number even if caller ID is available, and ask whether it can receive SMS. Caller ID alone is not a confirmed contact number. The MVP does not create a separate customer record or restrict separate reservations that share a name or phone number.
+
 ### Date and time validity
 
 - The fictional restaurant uses the `Europe/Madrid` time zone.
-- A reservation date must be today or a future date in that time zone.
-- For a reservation on the current local date, the arrival time must be strictly later than the current local time. A time that is current or already passed is invalid.
+- A reservation date must be between today and 30 calendar days later, inclusive, in that time zone.
+- The telephone flow interprets "today" and "tomorrow" in the restaurant's time zone. For other requests it obtains an unambiguous date, asking for the year when needed; weekday phrases require a concrete date from the caller. The complete date is read back before final confirmation. Speech-capture feasibility remains subject to #26.
+- For a reservation on the current local date, the arrival time must be strictly later than the local time at final validation before persistence. A time that is current or already passed is invalid.
 
 ### Service hours
 
@@ -100,6 +103,8 @@ When the requested service is full for the requested party size:
 1. Offer the other service on the same date.
 2. If the customer declines or it is also full, ask for another date.
 
+The caller may propose up to two alternative dates after the initial date. Offering the other service on a given date does not use an alternative date. If no option is accepted, end the call without creating a reservation.
+
 The MVP does not automatically search for available dates or offer another time within the same full service.
 
 ### Confirmation and corrections
@@ -108,6 +113,7 @@ The MVP does not automatically search for available dates or offer another time 
 - When a customer requests a correction, ask which single field must change and capture only that value.
 - Revalidate service hours and capacity whenever date, time, or party size changes.
 - Read the updated summary and request confirmation again.
+- Allow at most two correction rounds per call after the first summary, changing one field per round. Invalid attempts to capture the corrected value still follow the per-field limit below. A request for a third correction ends the call without a reservation.
 
 ### Errors and abandonment
 
@@ -119,11 +125,12 @@ The MVP does not automatically search for available dates or offer another time 
 
 ### Notifications
 
-- After persistence, request a reservation confirmation through Vonage Messages API.
+- After persistence, request a reservation confirmation through Vonage Messages API only when the confirmed contact number can receive SMS. Otherwise retain the confirmed reservation and record why no SMS was requested.
 - If final capacity revalidation fails, do not persist or confirm the reservation; follow the alternatives flow.
 - A notification failure must not delete or cancel the reservation.
 - Persist the notification's known state and any failure reason.
 - Distinguish a request accepted by Vonage from confirmed delivery to the recipient.
+- Distinguish a deliberately skipped SMS from a request or delivery failure. Never promise delivery when confirming the reservation by voice.
 - Initial internal states may include `PENDING`, `SENT`, `DELIVERED`, and `FAILED`; final states must match verified provider behaviour.
 
 ### Dashboard
@@ -136,14 +143,16 @@ The dashboard must:
 - Calculate capacity on the backend.
 - Support manual refresh; real-time updates are not required.
 - Allow manual reservation creation using the same backend validation and persistence rules as a telephone reservation.
+- Staff should read back the details and obtain customer confirmation before submitting a manual reservation; the backend cannot verify that conversation.
+- Manual reservations follow the same SMS eligibility policy, but the telephone journey takes priority for implementation and demonstration. Manual SMS wiring requires reviewed scope after the telephone notification flow is validated.
 
 ## Detailed business rules
 
-The approved rules RN-01 to RN-07 and their acceptance criteria are maintained in [business-rules.md](business-rules.md). That document is the detailed reference when product scope and implementation choices need to be reconciled.
+The approved rules RN-01 to RN-08 and their acceptance criteria are maintained in [business-rules.md](business-rules.md). That document is the detailed reference when product scope and implementation choices need to be reconciled.
 
 ## Priority validation scenarios
 
-1. A valid call leads to confirmation, persistence, a notification request, and dashboard visibility.
+1. A valid call with a contact number that can receive SMS leads to confirmation, persistence, a notification request, and dashboard visibility.
 2. A full dinner service leads to an offer for lunch on the same date, then a request for another date if necessary.
 3. An arrival time outside the permitted windows requires a new valid time.
 4. Correcting date or party size triggers revalidation and a new confirmation summary.
@@ -156,5 +165,5 @@ The approved rules RN-01 to RN-07 and their acceptance criteria are maintained i
 ## Decisions still required
 
 - Official Vonage Voice and Messages API contracts, credentials, test numbers, credits, webhooks, and Spanish speech-recognition viability.
-- Interpretation of relative dates, maximum booking horizon, and a same-day weekday reference.
-- Customer data model, business-duplicate handling, endpoint contracts, deployment approach, and post-MVP scope.
+- Endpoint contracts, deployment approach, and post-MVP cancellation/modification behaviour.
+- Provider-dependent details and any necessary product adjustments after the mentor reviews #26. Manual SMS implementation scope remains to be coordinated after the telephone flow.

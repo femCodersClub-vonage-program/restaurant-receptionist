@@ -2,7 +2,7 @@
 
 > Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: pending assignment
 > Status: ready
-> Last updated: 2026-11-15
+> Last updated: 2026-11-17
 
 ---
 
@@ -27,7 +27,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 - [ ] Reimplementing validation or transactional capacity checks in the controller.
 - [ ] Frontend form, Voice webhooks, customer account, business-duplicate policy, cancellation, or modification.
-- [ ] Adding authentication to the controlled demo, or deciding how a manual booking triggers SMS before that product policy is approved.
+- [ ] Adding authentication to the controlled demo, or implementing manual SMS triggering in this published endpoint issue. The product policy is approved; its wiring needs separately reviewed scope after the telephone journey.
 
 ## Acceptance criteria
 
@@ -41,7 +41,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 - Business rules: [RN-01](../docs/business-rules.md#rn-01-capacity-by-service), [RN-03](../docs/business-rules.md#rn-03-reservation-arrival-windows), [RN-07](../docs/business-rules.md#rn-07-staff-dashboard-and-manual-reservations).
 - Related ADRs: [ADR-006](../docs/adr/006-add-generated-openapi-documentation.md).
-- Open questions: exact HTTP contract requires mentor approval. The MVP does not yet decide whether manual bookings request SMS; this issue neither assumes nor implements that behaviour.
+- Open questions: exact HTTP contract requires mentor approval. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
 
 ## Technical design
 
@@ -65,7 +65,7 @@ Use the existing reservation model and #7. No migration is assumed; a required s
 
 ### Vonage integration
 
-None in this endpoint. A later notification workflow must resolve whether manually created bookings receive SMS.
+None in this published endpoint issue. A later, separately reviewed workflow will connect eligible manual bookings to the shared post-persistence notification flow after the telephone journey is implemented and validated.
 
 ## Security and data handling
 
@@ -94,4 +94,4 @@ Return stable, understandable error categories so the form can associate errors 
 
 ## Notes
 
-No business-duplicate or phone-normalization policy is introduced. Those remain separate product decisions.
+No business-duplicate restriction or separate customer entity applies to the MVP. RN-08 limits contact numbers to Spanish numbers; exact normalization remains an implementation detail. Staff should read back the booking details and obtain customer confirmation before submitting, but the backend cannot verify that conversation.

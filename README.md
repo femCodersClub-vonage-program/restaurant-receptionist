@@ -18,8 +18,8 @@ Build a telephone receptionist for a fictional restaurant. The MVP will handle r
 - Reservation data: customer name, phone number, date, arrival time, and party size.
 - Capacity managed independently for lunch and dinner services.
 - Explicit customer confirmation before a reservation is persisted.
-- Duplicate prevention and safe handling of concurrent reservation attempts.
-- Reservation message requests through Vonage Messages API. A messaging failure must not cancel a confirmed reservation.
+- Idempotent handling of repeated events for the same reservation attempt and safe handling of concurrent capacity checks; separate confirmed calls may create reservations with the same contact details.
+- Eligible reservation message requests through Vonage Messages API. A contact number that cannot receive SMS or a messaging failure must not cancel a confirmed reservation.
 - Basic dashboard showing reservations and capacity by date and service, with manual reservation creation that uses the same backend validation rules as telephone reservations.
 - Automated tests for critical business rules.
 

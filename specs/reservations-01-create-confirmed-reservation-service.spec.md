@@ -2,7 +2,7 @@
 
 > Issue: [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) | Branch: `feature/7-create-confirmed-reservation-service`
 > Status: done
-> Last updated: 2026-11-16
+> Last updated: 2026-11-17
 
 ---
 
@@ -46,7 +46,7 @@ Create a channel-agnostic backend application service that receives already conf
 - Open questions or assumptions:
   - The restaurant time zone is `Europe/Madrid`.
   - A same-day arrival time must be strictly later than the current local time; no implicit grace period applies.
-  - A phone number is required and non-blank. International normalization and business-duplicate handling remain later decisions.
+  - A phone number is required and non-blank. RN-08 subsequently limited MVP contact numbers to Spanish numbers; exact normalization remains an implementation detail. Separate confirmed calls may create reservations with the same contact details; repeated events for one attempt remain idempotent.
 
 ## Technical design
 

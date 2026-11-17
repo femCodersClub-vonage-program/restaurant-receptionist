@@ -54,8 +54,9 @@ For local development, Docker Compose provides the PostgreSQL service used by th
 
 The CI workflow runs the same backend and frontend checks on pull requests and protected branches.
 
+The MVP has no separate customer entity or business-duplicate restriction. Each reservation stores its contact details, and repeated events for one attempt remain idempotent under RN-05.
+
 ## Decisions still open
 
-- Customer data model and business-duplicate behaviour.
 - Exact API endpoints, webhook payloads, authentication, and Spanish speech-recognition behaviour.
 - Deployment and branch-protection required CI checks.
