@@ -77,12 +77,28 @@ The route creates a reservation resource and shares its path with the approved r
 |---|---|---|---|
 | `customerFirstName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
 | `customerLastName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
-| `phoneNumber` | string | Non-blank | No normalization or format policy is introduced. |
-| `reservationDate` | string | ISO-8601 date, `YYYY-MM-DD` | Must not be in the past. |
-| `arrivalTime` | string | Strict `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
+| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. A follow-up on #7 is pending mentor decision. |
+| `reservationDate` | string | Strict ISO-8601 calendar date, `YYYY-MM-DD` | Must not be in the past. |
+| `arrivalTime` | string | Strict 24-hour `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
 | `partySize` | integer | Whole number | Must be within the RN-01 range. |
 
 The client does not send a dining session or capacity value. The backend derives the session from `arrivalTime`, and #7 calculates capacity. Unknown properties are ignored, so a client-supplied `diningSession` has no effect.
+
+**Format enforcement:** the HTTP adapter explicitly enforces the `reservationDate`, `arrivalTime` and `partySize` formats; it does not rely on lenient parser defaults. A value that does not match the documented format exactly is rejected as `MALFORMED` for its field, and #7 is not invoked. Rejected examples include:
+
+| Field | Rejected value | Why |
+|---|---|---|
+| `reservationDate` | `"14/05/2027"` | Not `YYYY-MM-DD`. |
+| `reservationDate` | `"2027-5-14"` | Month and day must have two digits. |
+| `reservationDate` | `"2027-02-30"` | Not an existing calendar date. |
+| `reservationDate` | `"2027-05-14T21:00"` | Date-time instead of a date. |
+| `arrivalTime` | `"21:00:00"` | Seconds are not accepted. |
+| `arrivalTime` | `"9:00"` | Hour must have two digits. |
+| `reservationDate`, `arrivalTime` | Arrays or numbers, such as `[2027, 5, 14]` | Only JSON strings are accepted. |
+| `partySize` | `"4"` | Only JSON integers are accepted. |
+| `partySize` | `4.5` | Not a whole number. |
+
+HTTP tests cover each rejected example.
 
 **Successful response:** `201 Created`
 
@@ -126,7 +142,13 @@ There is no `Location` header, because the MVP has no read-by-id endpoint. The f
 | `OUT_OF_RANGE` | #7 | `partySize` is outside the RN-01 range. |
 | `MALFORMED` | HTTP adapter | The value cannot be parsed into the documented type or format. |
 
-`field` and `reason` reuse the #7 `ReservationField` and `InvalidData.Reason` values, so validation is not duplicated. When a value cannot be parsed (for example, `"reservationDate": "14/05/2027"`, `"arrivalTime": "21:00:00"`, or `"partySize": "four"`), #7 is never invoked. In that case the response uses `reason: "MALFORMED"` and the field resolved from the JSON property:
+Error vocabulary:
+
+- `field` always uses the #7 `ReservationField` vocabulary. The HTTP adapter does not define its own field names.
+- Every reason with Origin #7 is the existing #7 `InvalidData.Reason` value, returned unchanged. The adapter does not rename, merge, or add business reasons.
+- `MALFORMED` is the only adapter-specific reason. It exists because parsing fails before #7 is invoked, so no #7 result is available. It is not added to the #7 enum.
+
+When a value cannot be parsed (see **Format enforcement**), the response uses `reason: "MALFORMED"` and the `field` resolved from the JSON property:
 
 ```json
 {
@@ -144,7 +166,7 @@ If the body is not readable JSON, or the failing property cannot be identified, 
 **Adapter-side checks:** the controller adds no business rules. It has only two checks of its own:
 
 1. Parsing errors produce `MALFORMED`, because they happen before #7 is reached.
-2. A missing or `null` `partySize` returns `PARTY_SIZE` / `MISSING` without invoking #7. The #7 command uses a primitive `int`, so a missing value cannot be passed through. The outcome reuses an existing #7 reason.
+2. A missing or `null` `partySize` returns `PARTY_SIZE` / `MISSING` without invoking #7. The #7 command uses a primitive `int`, so a missing value cannot be passed through. The outcome reuses an existing #7 reason. The mentor approved this check as an adapter necessity, not duplicated business validation.
 
 **Insufficient capacity:** `409 Conflict` using Problem Details, with capacity extensions:
 
@@ -189,6 +211,7 @@ Return stable, understandable error categories so the form can associate errors 
 ### Automated
 
 - [ ] Controller tests cover request validation and each approved response shape.
+- [ ] HTTP tests reject every example in **Format enforcement** as `MALFORMED` for its field, without invoking #7.
 - [ ] Testcontainers tests cover persisted success, rejection without persistence, and shared capacity behaviour.
 - [ ] Reuse #7 concurrency coverage; add endpoint-level concurrency coverage only if the adapter introduces a distinct risk.
 
