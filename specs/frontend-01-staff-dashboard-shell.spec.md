@@ -1,8 +1,8 @@
 # Spec: Create the staff dashboard shell
 
 > Issue: [#10](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/10) | Branch: `feature/10-staff-dashboard-shell`
-> Status: ready
-> Last updated: 2026-11-10
+> Status: in-progress
+> Last updated: 2026-11-16
 
 ---
 
@@ -18,11 +18,11 @@ Replace the generated landing page with the initial staff-dashboard route and la
 
 ### In scope
 
-- [ ] A staff dashboard route at `/dashboard` and a clear entry route from `/`.
-- [ ] Page structure for selected date, lunch and dinner service summaries, and reservation lists.
-- [ ] Explicit loading, empty, and error states as reusable presentational components or patterns.
-- [ ] Semantic HTML, labelled controls, keyboard-accessible navigation, and responsive layout.
-- [ ] Removal of the generated Next.js starter content.
+- [x] A staff dashboard route at `/dashboard` and a clear entry route from `/`.
+- [x] Page structure for selected date, lunch and dinner service summaries, and reservation lists.
+- [x] Explicit loading, empty, and error states as reusable presentational components or patterns.
+- [x] Semantic HTML, labelled controls, keyboard-accessible navigation, and responsive layout.
+- [x] Removal of the generated Next.js starter content.
 
 ### Out of scope
 
@@ -33,11 +33,11 @@ Replace the generated landing page with the initial staff-dashboard route and la
 
 ## Acceptance criteria
 
-- [ ] Given a user opens `/`, when the page renders, then they can reach the staff dashboard through a clear action.
-- [ ] Given a user opens `/dashboard`, when the page renders, then it identifies the page as the staff reservation dashboard and presents the planned lunch and dinner sections.
-- [ ] Given the dashboard has no connected data source, when its empty state is shown, then it does not claim that reservations exist or show fabricated guest data.
-- [ ] Given a keyboard-only user, when they navigate the dashboard, then all interactive elements are reachable and have visible focus.
-- [ ] Given the frontend checks run, when lint and production build complete, then they pass.
+- [x] Given a user opens `/`, when the page renders, then they can reach the staff dashboard through a clear action.
+- [x] Given a user opens `/dashboard`, when the page renders, then it identifies the page as the staff reservation dashboard and presents the planned lunch and dinner sections.
+- [x] Given the dashboard has no connected data source, when its empty state is shown, then it does not claim that reservations exist or show fabricated guest data.
+- [x] Given a keyboard-only user, when they navigate the dashboard, then all interactive elements are reachable and have visible focus.
+- [x] Given the frontend checks run, when lint and production build complete, then they pass.
 
 ## Business rules and decisions
 
@@ -90,19 +90,19 @@ Do not hard-code real names, phone numbers, API URLs, credentials, or environmen
 
 ### Automated
 
-- [ ] `npm run lint` passes.
-- [ ] `npm run build` passes.
+- [x] `npm run lint` passes.
+- [x] `npm run build` passes.
 
 ### Manual verification
 
-- [ ] Run `npm run dev` and verify `/` and `/dashboard` in a browser.
-- [ ] Navigate the page and controls with a keyboard.
-- [ ] Check a narrow viewport and a desktop viewport for usable layout.
+- [x] Run `npm run dev` and verify `/` and `/dashboard` in a browser.
+- [x] Navigate the page and controls with a keyboard.
+- [x] Check a narrow viewport and a desktop viewport for usable layout.
 
 ## Dependencies and environment
 
-- [ ] Depends on `ui-01`, `ui-02`, and `ui-03` being merged.
-- [ ] Does not depend on an API endpoint or database migration.
+- [x] Depends on `ui-01`, `ui-02`, and `ui-03` being merged.
+- [x] Does not depend on an API endpoint or database migration.
 
 ## Notes
 
