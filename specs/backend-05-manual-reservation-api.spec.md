@@ -1,7 +1,7 @@
 # Spec: Expose manual confirmed reservation creation
 
 > Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: `feature/28-manual-reservation-api`
-> Status: in-progress
+> Status: done
 > Last updated: 2026-11-18
 > Contract: approved by mentor
 
@@ -20,9 +20,9 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 ### In scope
 
 - [x] Define and approve the POST route, request shape, success response, validation errors, and insufficient-capacity response.
-- [ ] Map first and last name, phone, date, arrival time, and party size to the #7 application command without accepting a client-supplied service or capacity.
-- [ ] Return a distinguishable outcome for successful persistence, invalid data, and insufficient capacity.
-- [ ] Add controller and PostgreSQL-backed integration tests; document the implemented contract in generated OpenAPI.
+- [x] Map first and last name, phone, date, arrival time, and party size to the #7 application command without accepting a client-supplied service or capacity.
+- [x] Return a distinguishable outcome for successful persistence, invalid data, and insufficient capacity.
+- [x] Add controller and PostgreSQL-backed integration tests; document the implemented contract in generated OpenAPI.
 
 ### Out of scope
 
@@ -32,11 +32,11 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 ## Acceptance criteria
 
-- [ ] Given valid fictional details, when staff submit a manual request, exactly one confirmed reservation is persisted through #7 and the endpoint returns its approved success response.
-- [ ] Given invalid fields, a past date, or an invalid arrival time, the endpoint returns a documented client error and persists nothing.
-- [ ] Given insufficient capacity, the endpoint reports that outcome without persisting a reservation.
-- [ ] Concurrent requests cannot oversell a service because they use the same #7 persistence path.
-- [ ] The OpenAPI description and tests match the approved request, success, and error contracts.
+- [x] Given valid fictional details, when staff submit a manual request, exactly one confirmed reservation is persisted through #7 and the endpoint returns its approved success response.
+- [x] Given invalid fields, a past date, or an invalid arrival time, the endpoint returns a documented client error and persists nothing.
+- [x] Given insufficient capacity, the endpoint reports that outcome without persisting a reservation.
+- [x] Concurrent requests cannot oversell a service because they use the same #7 persistence path.
+- [x] The OpenAPI description and tests match the approved request, success, and error contracts.
 
 ## Business rules and decisions
 
@@ -212,15 +212,15 @@ Return stable, understandable error categories so the form can associate errors 
 
 ### Automated
 
-- [ ] Controller tests cover request validation and each approved response shape.
-- [ ] HTTP tests reject every example in **Format enforcement** as `MALFORMED` for its field, without invoking #7.
-- [ ] Controller tests map `PHONE_NUMBER` / `INVALID_FORMAT` from #7 and show that `phoneNumber` reaches #7 unchanged.
-- [ ] Testcontainers tests cover persisted success, rejection without persistence, and shared capacity behaviour.
-- [ ] Reuse #7 concurrency coverage; add endpoint-level concurrency coverage only if the adapter introduces a distinct risk.
+- [x] Controller tests cover request validation and each approved response shape.
+- [x] HTTP tests reject every example in **Format enforcement** as `MALFORMED` for its field, without invoking #7.
+- [x] Controller tests map `PHONE_NUMBER` / `INVALID_FORMAT` from #7 and show that `phoneNumber` reaches #7 unchanged.
+- [x] Testcontainers tests cover persisted success, rejection without persistence, and shared capacity behaviour.
+- [x] Reuse #7 concurrency coverage; add endpoint-level concurrency coverage only if the adapter introduces a distinct risk.
 
 ### Manual verification
 
-- [ ] Inspect generated OpenAPI and exercise fictional success, validation, and capacity cases locally.
+- [x] Inspect generated OpenAPI and exercise fictional success, validation, and capacity cases locally.
 
 ## Dependencies and environment
 
