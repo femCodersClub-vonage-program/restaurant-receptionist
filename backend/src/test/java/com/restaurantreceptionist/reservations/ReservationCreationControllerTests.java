@@ -1,5 +1,6 @@
 package com.restaurantreceptionist.reservations;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +18,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -40,7 +44,7 @@ class ReservationCreationControllerTests {
 	private static final Map<String, String> VALID_VALUES = Map.of(
 		"customerFirstName", "\"Fictional\"",
 		"customerLastName", "\"Guest\"",
-		"phoneNumber", "\"fictional-test-contact\"",
+		"phoneNumber", "\"+34600000000\"",
 		"reservationDate", "\"2027-05-14\"",
 		"arrivalTime", "\"21:00\"",
 		"partySize", "4");
@@ -48,7 +52,7 @@ class ReservationCreationControllerTests {
 	private static final ConfirmedReservationCommand EXPECTED_COMMAND = new ConfirmedReservationCommand(
 		"Fictional",
 		"Guest",
-		"fictional-test-contact",
+		"+34600000000",
 		LocalDate.of(2027, 5, 14),
 		LocalTime.of(21, 0),
 		4);
@@ -85,9 +89,32 @@ class ReservationCreationControllerTests {
 	}
 
 	@Test
-	void invalidDataFromServiceReturns400WithFieldAndReason() throws Exception {
+	void phoneNumberReachesServiceUnchanged() throws Exception {
 		when(reservationCreationService.create(any()))
-			.thenReturn(new InvalidData(ReservationField.RESERVATION_DATE, ReservationCreationResult.InvalidData.Reason.PAST_DATE));
+			.thenReturn(new Created(RESERVATION_ID, DiningSession.DINNER));
+
+		postReservation(json(validValuesWith("phoneNumber", "\" +34 600-000-000 \"")))
+			.andExpect(status().isCreated());
+
+		ArgumentCaptor<ConfirmedReservationCommand> command = ArgumentCaptor.forClass(ConfirmedReservationCommand.class);
+
+		verify(reservationCreationService).create(command.capture());
+
+		assertThat(command.getValue().phoneNumber()).isEqualTo(" +34 600-000-000 ");
+	}
+
+	@ParameterizedTest(name = "{0} / {1}")
+	@CsvSource({
+		"RESERVATION_DATE, PAST_DATE",
+		"ARRIVAL_TIME, TIME_NOT_IN_FUTURE",
+		"ARRIVAL_TIME, OUTSIDE_ARRIVAL_WINDOW",
+		"PARTY_SIZE, OUT_OF_RANGE",
+		"PHONE_NUMBER, INVALID_FORMAT",
+		"FIRST_NAME, MISSING"
+	})
+	void invalidDataFromServiceReturns400WithFieldAndReason(ReservationField field, Reason reason) throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new InvalidData(field, reason));
 
 		postReservation(json(VALID_VALUES))
 			.andExpect(status().isBadRequest())
@@ -96,8 +123,8 @@ class ReservationCreationControllerTests {
 			.andExpect(jsonPath("$.title").value("Bad Request"))
 			.andExpect(jsonPath("$.status").value(400))
 			.andExpect(jsonPath("$.detail").value("The reservation request contains invalid data."))
-			.andExpect(jsonPath("$.field").value("RESERVATION_DATE"))
-			.andExpect(jsonPath("$.reason").value("PAST_DATE"));
+			.andExpect(jsonPath("$.field").value(field.name()))
+			.andExpect(jsonPath("$.reason").value(reason.name()));
 	}
 
 	@Test
