@@ -3,6 +3,7 @@ package com.restaurantreceptionist.reservations;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -144,6 +146,70 @@ class ReservationCreationControllerTests {
 			.andExpect(jsonPath("$.requestedPartySize").value(4));
 	}
 
+	@Test
+	void missingPartySizeReturns400MissingWithoutCallingService() throws Exception {
+		postReservation(json(validValuesWithout("partySize")))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.field").value("PARTY_SIZE"))
+			.andExpect(jsonPath("$.reason").value("MISSING"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@Test
+	void nullPartySizeReturns400MissingWithoutCallingService() throws Exception {
+		postReservation(json(validValuesWith("partySize", "null")))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.field").value("PARTY_SIZE"))
+			.andExpect(jsonPath("$.reason").value("MISSING"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{not json", "" })
+	void unreadableBodyReturnsGenericBadRequest(String body) throws Exception {
+		postReservation(body)
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.type").value("about:blank"))
+			.andExpect(jsonPath("$.detail").value("The request body is not readable."))
+			.andExpect(jsonPath("$.field").doesNotExist())
+			.andExpect(jsonPath("$.reason").doesNotExist());
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@ParameterizedTest(name = "{0} = {1}")
+	@CsvSource(delimiter = '|', textBlock = """
+		reservationDate | "14/05/2027" | RESERVATION_DATE
+		reservationDate | "2027-5-14" | RESERVATION_DATE
+		reservationDate | "2027-02-30" | RESERVATION_DATE
+		reservationDate | "2027-05-14T21:00" | RESERVATION_DATE
+		arrivalTime | "21:00:00" | ARRIVAL_TIME
+		arrivalTime | "9:00" | ARRIVAL_TIME
+		arrivalTime | "24:00" | ARRIVAL_TIME
+		reservationDate | [2027, 5, 14] | RESERVATION_DATE
+		arrivalTime | [21, 0] | ARRIVAL_TIME
+		reservationDate | 20270514 | RESERVATION_DATE
+		arrivalTime | 2100 | ARRIVAL_TIME
+		partySize | "4" | PARTY_SIZE
+		partySize | 4.5 | PARTY_SIZE
+		partySize | "four" | PARTY_SIZE
+		""")
+	void malformedValueReturns400MalformedForItsField(String property, String rawJsonValue, String expectedField) throws Exception {
+		postReservation(json(validValuesWith(property, rawJsonValue)))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.detail").value("The reservation request contains invalid data."))
+			.andExpect(jsonPath("$.field").value(expectedField))
+			.andExpect(jsonPath("$.reason").value("MALFORMED"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
 	private ResultActions postReservation(String body) throws Exception {
 		return mockMvc.perform(post("/api/reservations")
 			.contentType(MediaType.APPLICATION_JSON)
@@ -153,6 +219,12 @@ class ReservationCreationControllerTests {
 	private static Map<String, String> validValuesWith(String property, String rawJsonValue) {
 		Map<String, String> values = new HashMap<>(VALID_VALUES);
 		values.put(property, rawJsonValue);
+		return values;
+	}
+
+	private static Map<String, String> validValuesWithout(String property) {
+		Map<String, String> values = new HashMap<>(VALID_VALUES);
+		values.remove(property);
 		return values;
 	}
 
