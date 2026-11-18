@@ -1,8 +1,8 @@
 # Spec: Verify Vonage contracts for the MVP
 
-> Issue: [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) | Branch: `docs/26-verify-voice-messages-contracts-mvp`
+> Issue: [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) | Branch: `docs/26-verify-voice-messages-contracts`
 > Status: in progress
-> Last updated: 2026-11-17
+> Last updated: 2026-11-18
 
 ---
 
