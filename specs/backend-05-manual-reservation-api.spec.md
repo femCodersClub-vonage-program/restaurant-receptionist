@@ -186,7 +186,7 @@ If the body is not readable JSON, or the failing property cannot be identified, 
 
 Nothing is persisted on a `400` or `409` response. Capacity is checked and locked by #7 in the same transaction as persistence, so concurrent requests cannot oversell a service.
 
-**Data handling:** error responses and logs must not include names, phone numbers, or request bodies. Problem Details is proposed for this endpoint only and does not add a global exception handler.
+**Data handling:** error responses and logs must not include names, phone numbers, or request bodies. Problem Details is used for this endpoint only and does not add a global exception handler.
 
 ### Frontend
 
