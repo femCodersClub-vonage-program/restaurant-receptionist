@@ -1,0 +1,237 @@
+package com.restaurantreceptionist.reservations;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+
+import com.restaurantreceptionist.availability.CapacitySummary;
+import com.restaurantreceptionist.reservations.ReservationCreationResult.Created;
+import com.restaurantreceptionist.reservations.ReservationCreationResult.InsufficientCapacity;
+import com.restaurantreceptionist.reservations.ReservationCreationResult.InvalidData;
+import com.restaurantreceptionist.reservations.ReservationCreationResult.InvalidData.Reason;
+
+@WebMvcTest(ReservationCreationController.class)
+class ReservationCreationControllerTests {
+
+	private static final MediaType PROBLEM_JSON = MediaType.valueOf("application/problem+json");
+
+	private static final UUID RESERVATION_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+	private static final Map<String, String> VALID_VALUES = Map.of(
+		"customerFirstName", "\"Fictional\"",
+		"customerLastName", "\"Guest\"",
+		"phoneNumber", "\"+34600000000\"",
+		"reservationDate", "\"2027-05-14\"",
+		"arrivalTime", "\"21:00\"",
+		"partySize", "4");
+
+	private static final ConfirmedReservationCommand EXPECTED_COMMAND = new ConfirmedReservationCommand(
+		"Fictional",
+		"Guest",
+		"+34600000000",
+		LocalDate.of(2027, 5, 14),
+		LocalTime.of(21, 0),
+		4);
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@MockitoBean
+	private ReservationCreationService reservationCreationService;
+
+	@Test
+	void createdReservationReturns201WithIdAndDiningSession() throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new Created(RESERVATION_ID, DiningSession.DINNER));
+
+		postReservation(json(VALID_VALUES))
+			.andExpect(status().isCreated())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+			.andExpect(jsonPath("$.id").value(RESERVATION_ID.toString()))
+			.andExpect(jsonPath("$.diningSession").value("DINNER"))
+			.andExpect(header().doesNotExist("Location"));
+	}
+
+	@Test
+	void clientSuppliedDiningSessionIsIgnored() throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new Created(RESERVATION_ID, DiningSession.DINNER));
+
+		postReservation(json(validValuesWith("diningSession", "\"LUNCH\"")))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.diningSession").value("DINNER"));
+
+		verify(reservationCreationService).create(EXPECTED_COMMAND);
+	}
+
+	@Test
+	void phoneNumberReachesServiceUnchanged() throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new Created(RESERVATION_ID, DiningSession.DINNER));
+
+		postReservation(json(validValuesWith("phoneNumber", "\" +34 600-000-000 \"")))
+			.andExpect(status().isCreated());
+
+		ArgumentCaptor<ConfirmedReservationCommand> command = ArgumentCaptor.forClass(ConfirmedReservationCommand.class);
+
+		verify(reservationCreationService).create(command.capture());
+
+		assertThat(command.getValue().phoneNumber()).isEqualTo(" +34 600-000-000 ");
+	}
+
+	@ParameterizedTest(name = "{0} / {1}")
+	@CsvSource({
+		"RESERVATION_DATE, PAST_DATE",
+		"ARRIVAL_TIME, TIME_NOT_IN_FUTURE",
+		"ARRIVAL_TIME, OUTSIDE_ARRIVAL_WINDOW",
+		"PARTY_SIZE, OUT_OF_RANGE",
+		"PHONE_NUMBER, INVALID_FORMAT",
+		"FIRST_NAME, MISSING"
+	})
+	void invalidDataFromServiceReturns400WithFieldAndReason(ReservationField field, Reason reason) throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new InvalidData(field, reason));
+
+		postReservation(json(VALID_VALUES))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.type").value("about:blank"))
+			.andExpect(jsonPath("$.title").value("Bad Request"))
+			.andExpect(jsonPath("$.status").value(400))
+			.andExpect(jsonPath("$.detail").value("The reservation request contains invalid data."))
+			.andExpect(jsonPath("$.field").value(field.name()))
+			.andExpect(jsonPath("$.reason").value(reason.name()));
+	}
+
+	@Test
+	void insufficientCapacityReturns409WithCapacityExtensions() throws Exception {
+		when(reservationCreationService.create(any()))
+			.thenReturn(new InsufficientCapacity(new CapacitySummary(DiningSession.DINNER, 30, 27, 3), 4));
+
+		postReservation(json(VALID_VALUES))
+			.andExpect(status().isConflict())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.type").value("about:blank"))
+			.andExpect(jsonPath("$.title").value("Conflict"))
+			.andExpect(jsonPath("$.status").value(409))
+			.andExpect(jsonPath("$.detail").value("The dining session does not have enough available capacity for the requested party size."))
+			.andExpect(jsonPath("$.diningSession").value("DINNER"))
+			.andExpect(jsonPath("$.availableCapacity").value(3))
+			.andExpect(jsonPath("$.requestedPartySize").value(4));
+	}
+
+	@Test
+	void missingPartySizeReturns400MissingWithoutCallingService() throws Exception {
+		postReservation(json(validValuesWithout("partySize")))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.field").value("PARTY_SIZE"))
+			.andExpect(jsonPath("$.reason").value("MISSING"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@Test
+	void nullPartySizeReturns400MissingWithoutCallingService() throws Exception {
+		postReservation(json(validValuesWith("partySize", "null")))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.field").value("PARTY_SIZE"))
+			.andExpect(jsonPath("$.reason").value("MISSING"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{not json", "" })
+	void unreadableBodyReturnsGenericBadRequest(String body) throws Exception {
+		postReservation(body)
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.type").value("about:blank"))
+			.andExpect(jsonPath("$.detail").value("The request body is not readable."))
+			.andExpect(jsonPath("$.field").doesNotExist())
+			.andExpect(jsonPath("$.reason").doesNotExist());
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	@ParameterizedTest(name = "{0} = {1}")
+	@CsvSource(delimiter = '|', textBlock = """
+		reservationDate | "14/05/2027" | RESERVATION_DATE
+		reservationDate | "2027-5-14" | RESERVATION_DATE
+		reservationDate | "2027-02-30" | RESERVATION_DATE
+		reservationDate | "2027-05-14T21:00" | RESERVATION_DATE
+		arrivalTime | "21:00:00" | ARRIVAL_TIME
+		arrivalTime | "9:00" | ARRIVAL_TIME
+		arrivalTime | "24:00" | ARRIVAL_TIME
+		reservationDate | [2027, 5, 14] | RESERVATION_DATE
+		arrivalTime | [21, 0] | ARRIVAL_TIME
+		reservationDate | 20270514 | RESERVATION_DATE
+		arrivalTime | 2100 | ARRIVAL_TIME
+		partySize | "4" | PARTY_SIZE
+		partySize | 4.5 | PARTY_SIZE
+		partySize | "four" | PARTY_SIZE
+		""")
+	void malformedValueReturns400MalformedForItsField(String property, String rawJsonValue, String expectedField) throws Exception {
+		postReservation(json(validValuesWith(property, rawJsonValue)))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+			.andExpect(jsonPath("$.detail").value("The reservation request contains invalid data."))
+			.andExpect(jsonPath("$.field").value(expectedField))
+			.andExpect(jsonPath("$.reason").value("MALFORMED"));
+
+		verifyNoInteractions(reservationCreationService);
+	}
+
+	private ResultActions postReservation(String body) throws Exception {
+		return mockMvc.perform(post("/api/reservations")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(body));
+	}
+
+	private static Map<String, String> validValuesWith(String property, String rawJsonValue) {
+		Map<String, String> values = new HashMap<>(VALID_VALUES);
+		values.put(property, rawJsonValue);
+		return values;
+	}
+
+	private static Map<String, String> validValuesWithout(String property) {
+		Map<String, String> values = new HashMap<>(VALID_VALUES);
+		values.remove(property);
+		return values;
+	}
+
+	private static String json(Map<String, String> rawJsonValues) {
+		return rawJsonValues.entrySet().stream()
+			.map(entry -> "\"" + entry.getKey() + "\" : " + entry.getValue())
+			.collect(Collectors.joining(", ", "{", "}"));
+	}
+
+}
