@@ -2,7 +2,7 @@
 
 > Issue: [#28](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/28) | Branch: `feature/28-manual-reservation-api`
 > Status: in-progress
-> Last updated: 2026-11-17
+> Last updated: 2026-11-18
 > Contract: approved by mentor
 
 ---
@@ -42,7 +42,7 @@ Expose a Spring MVC write endpoint that accepts the required reservation fields 
 
 - Business rules: [RN-01](../docs/business-rules.md#rn-01-capacity-by-service), [RN-03](../docs/business-rules.md#rn-03-reservation-arrival-windows), [RN-07](../docs/business-rules.md#rn-07-staff-dashboard-and-manual-reservations).
 - Related ADRs: [ADR-006](../docs/adr/006-add-generated-openapi-documentation.md).
-- Open questions: none for the approved HTTP contract. RN-08 phone-number validation is a separate shared-service follow-up. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
+- Open questions: none for the approved HTTP contract. RN-08 phone-number validation is provided by the shared service through #49. RN-06 to RN-08 approve SMS for manual bookings when the contact number can receive it, but this issue does not implement that later notification wiring.
 
 ## Technical design
 
@@ -66,7 +66,7 @@ The route creates a reservation resource and shares its path with the approved r
 {
     "customerFirstName": "Fictional",
     "customerLastName": "Guest",
-    "phoneNumber": "fictional-test-contact",
+    "phoneNumber": "+34600000000",
     "reservationDate": "2027-05-14",
     "arrivalTime": "21:00",
     "partySize": 4
@@ -77,7 +77,7 @@ The route creates a reservation resource and shares its path with the approved r
 |---|---|---|---|
 | `customerFirstName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
 | `customerLastName` | string | Non-blank | Leading and trailing whitespace is stripped by #7. |
-| `phoneNumber` | string | Non-blank | #7 currently checks only that the value is present and not blank. The RN-08 Spanish-number restriction is not yet enforced by #7, and this adapter does not add it because that would duplicate business validation. RN-08 validation is a separate shared-service follow-up; this endpoint inherits it from `ReservationCreationService` once merged. |
+| `phoneNumber` | string | Spanish contact number | Validated and normalized by #7 under RN-08: nine national digits starting with `6`, `7`, `8`, or `9`, optionally prefixed with `+34`; spaces and hyphens are accepted as separators. #7 stores accepted values as `+34` followed by the nine digits. This adapter passes the value to #7 unchanged and does not validate or normalize it. |
 | `reservationDate` | string | Strict ISO-8601 calendar date, `YYYY-MM-DD` | Must not be in the past. |
 | `arrivalTime` | string | Strict 24-hour `HH:mm` | Must fall within an RN-03 arrival window; on the current date it must be later than now. |
 | `partySize` | integer | Whole number | Must be within the RN-01 range. |
@@ -136,6 +136,7 @@ There is no `Location` header, because the MVP has no read-by-id endpoint. The f
 | `reason` | Origin | Meaning |
 |---|---|---|
 | `MISSING` | #7 | The field is absent or blank. |
+| `INVALID_FORMAT` | #7 | `phoneNumber` is not a valid Spanish contact number under RN-08. |
 | `PAST_DATE` | #7 | `reservationDate` is before today. |
 | `TIME_NOT_IN_FUTURE` | #7 | On today's date, `arrivalTime` is not later than now. |
 | `OUTSIDE_ARRIVAL_WINDOW` | #7 | `arrivalTime` is outside the RN-03 lunch and dinner windows. |
@@ -147,6 +148,7 @@ Error vocabulary:
 - `field` always uses the #7 `ReservationField` vocabulary. The HTTP adapter does not define its own field names.
 - Every reason with Origin #7 is the existing #7 `InvalidData.Reason` value, returned unchanged. The adapter does not rename, merge, or add business reasons.
 - `MALFORMED` is the only adapter-specific reason. It exists because parsing fails before #7 is invoked, so no #7 result is available. It is not added to the #7 enum.
+- `INVALID_FORMAT` and `MALFORMED` are distinct. `MALFORMED` means the adapter could not parse the JSON value into its type. `INVALID_FORMAT` means #7 received a parsed value that does not satisfy a business format rule.
 
 When a value cannot be parsed (see **Format enforcement**), the response uses `reason: "MALFORMED"` and the `field` resolved from the JSON property:
 
@@ -212,6 +214,7 @@ Return stable, understandable error categories so the form can associate errors 
 
 - [ ] Controller tests cover request validation and each approved response shape.
 - [ ] HTTP tests reject every example in **Format enforcement** as `MALFORMED` for its field, without invoking #7.
+- [ ] Controller tests map `PHONE_NUMBER` / `INVALID_FORMAT` from #7 and show that `phoneNumber` reaches #7 unchanged.
 - [ ] Testcontainers tests cover persisted success, rejection without persistence, and shared capacity behaviour.
 - [ ] Reuse #7 concurrency coverage; add endpoint-level concurrency coverage only if the adapter introduces a distinct risk.
 
@@ -226,4 +229,4 @@ Return stable, understandable error categories so the form can associate errors 
 
 ## Notes
 
-No business-duplicate restriction or separate customer entity applies to the MVP. RN-08 limits contact numbers to Spanish numbers; exact normalization remains an implementation detail. Staff should read back the booking details and obtain customer confirmation before submitting, but the backend cannot verify that conversation.
+No business-duplicate restriction or separate customer entity applies to the MVP. RN-08 limits contact numbers to Spanish numbers; #7 validates and normalizes them (#49). Staff should read back the booking details and obtain customer confirmation before submitting, but the backend cannot verify that conversation.
