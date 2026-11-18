@@ -1,7 +1,6 @@
 package com.restaurantreceptionist.reservations;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.OptBoolean;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -11,10 +10,11 @@ public record ManualReservationRequest(
 	String customerFirstName,
 	String customerLastName,
 	String phoneNumber,
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "uuuu-MM-dd", lenient = OptBoolean.FALSE)
+	@JsonDeserialize(using = StrictLocalDateDeserializer.class)
 	LocalDate reservationDate,
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm", lenient = OptBoolean.FALSE)
+	@JsonDeserialize(using = StrictLocalTimeDeserializer.class)
 	LocalTime arrivalTime,
+	@JsonDeserialize(using = StrictIntegerDeserializer.class)
 	Integer partySize) {
 
 	ConfirmedReservationCommand toCommand() {
