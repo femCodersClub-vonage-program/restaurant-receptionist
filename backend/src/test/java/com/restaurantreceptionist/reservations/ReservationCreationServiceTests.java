@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +37,8 @@ class ReservationCreationServiceTests {
 	private static final LocalTime NOW = LocalTime.of(14, 0);
 
 	private static final LocalTime LUNCH_TIME = LocalTime.of(13, 30);
+
+	private static final String FICTIONAL_PHONE_NUMBER = "+34600000000";
 
 	private static final Clock CLOCK = Clock.fixed(
 		TODAY.atTime(NOW).atZone(ClockConfiguration.RESTAURANT_ZONE).toInstant(),
@@ -64,7 +67,7 @@ class ReservationCreationServiceTests {
 	@ValueSource(strings = "   ")
 	void rejectsMissingFirstName(String firstName) {
 		var command = new ConfirmedReservationCommand(
-			firstName, "Guest", "fictional-test-contact", TOMORROW, LUNCH_TIME, 2);
+			firstName, "Guest", FICTIONAL_PHONE_NUMBER, TOMORROW, LUNCH_TIME, 2);
 
 		assertInvalid(command, ReservationField.FIRST_NAME, Reason.MISSING);
 	}
@@ -74,7 +77,7 @@ class ReservationCreationServiceTests {
 	@ValueSource(strings = "   ")
 	void rejectsMissingLastName(String lastName) {
 		var command = new ConfirmedReservationCommand(
-			"Fictional", lastName, "fictional-test-contact", TOMORROW, LUNCH_TIME, 2);
+			"Fictional", lastName, FICTIONAL_PHONE_NUMBER, TOMORROW, LUNCH_TIME, 2);
 
 		assertInvalid(command, ReservationField.LAST_NAME, Reason.MISSING);
 	}
@@ -87,6 +90,15 @@ class ReservationCreationServiceTests {
 			"Fictional", "Guest", phoneNumber, TOMORROW, LUNCH_TIME, 2);
 
 		assertInvalid(command, ReservationField.PHONE_NUMBER, Reason.MISSING);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"512345678", "61234567", "+351912345678", "0034612345678", "six12345678"})
+	void rejectsPhoneNumberOutsideTheApprovedSpanishFormats(String phoneNumber) {
+		var command = new ConfirmedReservationCommand(
+			"Fictional", "Guest", phoneNumber, TOMORROW, LUNCH_TIME, 2);
+
+		assertInvalid(command, ReservationField.PHONE_NUMBER, Reason.INVALID_FORMAT);
 	}
 
 	@Test
@@ -130,7 +142,7 @@ class ReservationCreationServiceTests {
 	@Test
 	void createsReservationAfterLockingAndRevalidatingCapacity() {
 		var command = new ConfirmedReservationCommand(
-			" Fictional ", " Guest ", " fictional-test-contact ", TOMORROW, LUNCH_TIME, 4);
+			" Fictional ", " Guest ", " +34 600-000-000 ", TOMORROW, LUNCH_TIME, 4);
 
 		when(availabilityService.checkPartyFit(TOMORROW, LUNCH_TIME, 4))
 			.thenReturn(new PartyFitResult.Fits( new CapacitySummary(DiningSession.LUNCH, 30, 26, 4)));
@@ -158,7 +170,7 @@ class ReservationCreationServiceTests {
 				Reservation::getPartySize,
 				Reservation::getStatus)
 			.containsExactly(
-				"Fictional", "Guest", "fictional-test-contact",
+				"Fictional", "Guest", FICTIONAL_PHONE_NUMBER,
 				TOMORROW, LUNCH_TIME, DiningSession.LUNCH, (short) 4, ReservationStatus.CONFIRMED);
 	}
 
@@ -169,6 +181,27 @@ class ReservationCreationServiceTests {
 
 		assertThat(reservationCreationService.create(command(TODAY, arrivalTime, 2)))
 			.isInstanceOf(Created.class);
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"600000000, +34600000000",
+		"712345678, +34712345678",
+		"912345678, +34912345678",
+		"832345678, +34832345678",
+		"'+34 600-000-000', +34600000000"
+	})
+	void acceptsAndNormalizesApprovedSpanishPhoneNumberFormats(String phoneNumber, String expectedPhoneNumber) {
+		var command = new ConfirmedReservationCommand(
+			"Fictional", "Guest", phoneNumber, TOMORROW, LUNCH_TIME, 2);
+		when(availabilityService.checkPartyFit(TOMORROW, LUNCH_TIME, 2))
+			.thenReturn(new PartyFitResult.Fits(new CapacitySummary(DiningSession.LUNCH, 30, 0, 30)));
+		when(reservationRepository.saveAndFlush(any(Reservation.class)))
+			.thenAnswer(invocation -> invocation.getArgument(0));
+
+		assertThat(reservationCreationService.create(command)).isInstanceOf(Created.class);
+		verify(reservationRepository).saveAndFlush(reservationCaptor.capture());
+		assertThat(reservationCaptor.getValue().getPhoneNumber()).isEqualTo(expectedPhoneNumber);
 	}
 
 	@Test
@@ -223,7 +256,7 @@ class ReservationCreationServiceTests {
 
 	private static ConfirmedReservationCommand command(LocalDate date, LocalTime time, int partySize) {
 		return new ConfirmedReservationCommand(
-			"Fictional", "Guest", "fictional-test-contact", date, time, partySize);
+			"Fictional", "Guest", FICTIONAL_PHONE_NUMBER, date, time, partySize);
 	}
 	private void stubSuccessfulCreation(
 		LocalDate date, LocalTime time, int partySize, DiningSession diningSession) {

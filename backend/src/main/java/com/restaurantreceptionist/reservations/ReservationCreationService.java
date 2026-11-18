@@ -43,6 +43,10 @@ public class ReservationCreationService {
 		if (invalidData.isPresent()) {
 			return invalidData.get();
 		}
+		String normalizedPhoneNumber = normalizeSpanishPhoneNumber(command.phoneNumber());
+		if (normalizedPhoneNumber == null) {
+			return new InvalidData(ReservationField.PHONE_NUMBER, Reason.INVALID_FORMAT);
+		}
 
 		LocalDate reservationDate = command.reservationDate();
 		DiningSession diningSession = ArrivalWindows.classify(command.arrivalTime()).orElseThrow();
@@ -52,7 +56,7 @@ public class ReservationCreationService {
 			reservationDate, command.arrivalTime(), command.partySize());
 
 		return switch (partyFit) {
-			case PartyFitResult.Fits fits -> persist(command, diningSession);
+			case PartyFitResult.Fits fits -> persist(command, normalizedPhoneNumber, diningSession);
 			case PartyFitResult.InsufficientCapacity insufficient ->
 				new InsufficientCapacity(insufficient.capacity(), insufficient.requestedPartySize());
 			case PartyFitResult.InvalidArrivalTime invalidTime ->
@@ -98,11 +102,14 @@ public class ReservationCreationService {
 		return Optional.empty();
 	}
 
-	private Created persist(ConfirmedReservationCommand command, DiningSession diningSession) {
+	private Created persist(
+		ConfirmedReservationCommand command,
+		String normalizedPhoneNumber,
+		DiningSession diningSession) {
 		Reservation reservation = reservationRepository.saveAndFlush(new Reservation(
 			command.firstName().strip(),
 			command.lastName().strip(),
-			command.phoneNumber().strip(),
+			normalizedPhoneNumber,
 			command.reservationDate(),
 			command.arrivalTime(),
 			diningSession,
@@ -112,6 +119,15 @@ public class ReservationCreationService {
 
 	private static boolean isBlank(String value) {
 		return value == null || value.isBlank();
+	}
+
+	private static String normalizeSpanishPhoneNumber(String phoneNumber) {
+		String compact = phoneNumber.strip().replace(" ", "").replace("-", "");
+		String nationalNumber = compact.startsWith("+34") ? compact.substring(3) : compact;
+		if (!nationalNumber.matches("[6-9]\\d{8}")) {
+			return null;
+		}
+		return "+34" + nationalNumber;
 	}
 
 	private static Optional<InvalidData> invalid(ReservationField field, Reason reason) {
