@@ -9,6 +9,7 @@ All repository content, including these guides, is written in English. Team conv
 | Guide | Purpose |
 | --- | --- |
 | [Flyway migrations](flyway-migrations.md) | Create, validate, coordinate, and recover versioned database migrations safely. |
+| [Vonage developer tooling](vonage-developer-tooling.md) | Set up the Vonage MCP server and CLI locally without sharing credentials. |
 
 ## When to add a guide
 
