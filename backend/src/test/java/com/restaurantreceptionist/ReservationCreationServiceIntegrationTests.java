@@ -3,6 +3,7 @@ package com.restaurantreceptionist;
 import com.restaurantreceptionist.availability.CapacitySummary;
 import com.restaurantreceptionist.reservations.*;
 import com.restaurantreceptionist.reservations.ReservationCreationResult.Created;
+import com.restaurantreceptionist.reservations.ReservationCreationResult.InvalidData;
 import com.restaurantreceptionist.reservations.ReservationCreationResult.InsufficientCapacity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReservationCreationServiceIntegrationTests {
 
 	private static final LocalTime LUNCH_TIME = LocalTime.of(14, 0);
+
+	private static final String FICTIONAL_PHONE_NUMBER = "+34600000000";
 
 	@Autowired
 	private ReservationCreationService reservationCreationService;
@@ -86,6 +89,17 @@ class ReservationCreationServiceIntegrationTests {
 	}
 
 	@Test
+	void rejectsMalformedPhoneNumberBeforePersisting() {
+		var command = new ConfirmedReservationCommand(
+			"Fictional", "Guest", "+351912345678", reservationDate, LUNCH_TIME, 2);
+
+		assertThat(reservationCreationService.create(command))
+			.isEqualTo(new InvalidData(ReservationField.PHONE_NUMBER, InvalidData.Reason.INVALID_FORMAT));
+		assertThat(reservationRepository.findAllByReservationDateAndDiningSessionOrderByArrivalTimeAsc(
+			reservationDate, DiningSession.LUNCH)).isEmpty();
+	}
+
+	@Test
 	void lockCapacityRequiresAnActiveTransaction() {
 		assertThatThrownBy(() -> reservationRepository.lockCapacity(reservationDate, DiningSession.LUNCH))
 			.isInstanceOf(IllegalTransactionStateException.class);
@@ -134,7 +148,7 @@ class ReservationCreationServiceIntegrationTests {
 		return new ConfirmedReservationCommand(
 			"Fictional",
 			"Guest",
-			"fictional-test-contact",
+			FICTIONAL_PHONE_NUMBER,
 			reservationDate,
 			arrivalTime,
 			partySize);
@@ -144,7 +158,7 @@ class ReservationCreationServiceIntegrationTests {
 		reservationRepository.saveAndFlush(new Reservation(
 			"Fictional",
 			"Guest",
-			"fictional-test-contact",
+			FICTIONAL_PHONE_NUMBER,
 			reservationDate,
 			LocalTime.of(13, 0),
 			DiningSession.LUNCH,
