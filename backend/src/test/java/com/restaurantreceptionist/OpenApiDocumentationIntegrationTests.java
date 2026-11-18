@@ -1,10 +1,5 @@
 package com.restaurantreceptionist;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Import({
 		TestcontainersConfiguration.class,
@@ -48,6 +46,25 @@ class OpenApiDocumentationIntegrationTests {
 				.andExpect(jsonPath("$.paths['/api/reservations'].get.responses['400'].content['application/problem+json']")
 						.exists())
 				.andExpect(jsonPath("$.paths['/openapi-smoke-test'].get").exists());
+	}
+
+	@Test
+	void manualReservationOperationDocumentsApprovedContract() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.paths['/api/reservations'].post.requestBody.content['application/json'].schema['$ref']")
+				.value("#/components/schemas/ManualReservationRequest"))
+			.andExpect(jsonPath("$.paths['/api/reservations'].post.responses['201'].content['application/json']")
+				.exists())
+			.andExpect(jsonPath("$.paths['/api/reservations'].post.responses['400'].content['application/problem+json']")
+				.exists())
+			.andExpect(jsonPath("$.paths['/api/reservations'].post.responses['409'].content['application/problem+json']")
+				.exists())
+			.andExpect(jsonPath("$.components.schemas.ManualReservationRequest.properties.reservationDate.format").value("date"))
+			.andExpect(jsonPath("$.components.schemas.ManualReservationRequest.properties.arrivalTime.example").value("21:00"))
+			.andExpect(jsonPath("$.components.schemas.ManualReservationRequest.properties.partySize.type").value("integer"))
+			.andExpect(jsonPath("$.components.schemas.ManualReservationRequest.properties.diningSession")
+				.doesNotExist());
 	}
 
 	@Test
