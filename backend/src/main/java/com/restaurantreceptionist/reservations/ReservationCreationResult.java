@@ -13,6 +13,7 @@ public sealed interface ReservationCreationResult {
 
 		public enum Reason {
 			MISSING,
+			INVALID_FORMAT,
 			PAST_DATE,
 			TIME_NOT_IN_FUTURE,
 			OUTSIDE_ARRIVAL_WINDOW,
