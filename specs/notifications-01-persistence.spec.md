@@ -1,8 +1,9 @@
 # Spec: Reservation confirmation notification journey
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
-> Status: #30 ready for planning but blocked for implementation; #33 and #34 planned and blocked
-> Last updated: 2026-11-17
+> Branch (#30): `feature/30-notification-persistence`
+> Status: #30 in progress; contract pending mentor approval. #33 and #34 planned and blocked
+> Last updated: 2026-11-19
 
 ---
 
@@ -18,7 +19,7 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state and correlation data. The approved no-request reason needs to be reflected in the reviewed state mapping and issue scope before implementation. | Published and ready for planning; implementation blocked by mentor-reviewed #26 findings and approved state mapping. |
+| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | In progress; #26 is complete. Implementation waits for mentor approval of the proposed schema and state mapping below. |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Planned and blocked; depends on #26, #7, #30, verified Messages request contract, and approval of the send/correlation design. |
 | [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
 
@@ -26,7 +27,7 @@ Each issue links back to this spec. The later slices do not expand #30.
 
 ## Scope
 
-The scope and acceptance criteria in this section describe the published #30 persistence issue. Align its issue text with the newly approved no-request policy before implementation. The later slices are specified separately below.
+The scope and acceptance criteria in this section describe the published #30 persistence issue, whose text already includes the approved no-request policy. The later slices are specified separately below.
 
 ### In scope
 
@@ -80,7 +81,7 @@ These later slices are planning boundaries, not approved provider contracts or p
 
 ### Backend
 
-Provide persistence operations for notification records and lookup by verified provider identifier. Exact fields and transition rules are pending the Vonage research and mentor review.
+Add a `notifications` package with the `ReservationNotification` entity, the `NotificationStatus` and `NotificationFailureReason` enums, and a repository that looks up a notification by reservation and by provider message identifier. The entity enforces the proposed transitions below. Issue [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) adds no service, controller, scheduler, or Vonage client.
 
 ### Frontend
 
@@ -88,7 +89,64 @@ No UI change.
 
 ### Data and migrations
 
-Add a later versioned migration; reserve its version and proposed filename only when implementation starts after updating from `develop`. Do not alter merged `V1__create_reservations.sql`. Define indexes and constraints from the approved correlation model, not from assumptions.
+Add the versioned migration proposed below and recheck its version against `develop` before requesting review ([ADR-004](../docs/adr/004-adopt-flyway-migration-coordination-policy.md)). Do not alter merged `V1__create_reservations.sql`. Indexes and constraints follow the proposed correlation model; the two `UNIQUE` constraints also provide the lookup indexes.
+
+#### Proposed schema (pending mentor approval)
+
+Migration: `V2__create_reservation_notifications.sql`. Checked against `develop` and all remote branches on 2026-11-19; no other migration besides `V1__create_reservations.sql` exists.
+
+Table `reservation_notifications`:
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `UUID` | Primary key, `DEFAULT gen_random_uuid()`. |
+| `reservation_id` | `UUID` | `NOT NULL`, `UNIQUE`, foreign key to `reservations(id)`. One notification per reservation; automated retries are out of scope. |
+| `status` | `VARCHAR(40)` | `NOT NULL`, restricted by `CHECK` to the states below. |
+| `provider_message_id` | `TEXT` | Nullable, `UNIQUE`. Stores the Messages `message_uuid` returned with `202 Accepted`. `TEXT` avoids encoding an unverified identifier format. |
+| `failure_reason` | `VARCHAR(40)` | Nullable, restricted by `CHECK` to a closed internal list. No free text or provider error body. |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | `NOT NULL DEFAULT CURRENT_TIMESTAMP`. |
+| `updated_at` | `TIMESTAMP WITH TIME ZONE` | `NOT NULL DEFAULT CURRENT_TIMESTAMP`; updated by the application on each state change. |
+
+Structural constraints:
+
+- `provider_message_id` is present if and only if `status` is `ACCEPTED`, `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
+- `failure_reason` is required when `status` is `REQUEST_FAILED`, optional for `REJECTED` and `UNDELIVERABLE`, and absent for every other state.
+- The table stores no SMS content, contact number, raw request or callback payload, or credential. The reservation's `status` column is never written by notification code.
+
+#### Proposed states and transitions (pending mentor approval)
+
+| State | Source | Meaning | Final |
+| --- | --- | --- | --- |
+| `NOT_REQUESTED_CANNOT_RECEIVE` | RN-08 | The customer said the confirmed contact number cannot receive SMS. No request is made. | Yes |
+| `NOT_REQUESTED_CAPABILITY_UNKNOWN` | RN-08 | The customer did not know whether the number can receive SMS. No request is made. | Yes |
+| `PENDING` | Application | Recorded immediately before the Messages request, so that a crash or timeout leaves a trace. | No |
+| `REQUEST_FAILED` | Messages request | The request was not accepted, or its outcome is ambiguous (for example, a timeout). Requires a `failure_reason`. | Yes |
+| `ACCEPTED` | Messages `202 Accepted` | Vonage accepted the request and returned a `message_uuid`. This is not delivery. | No |
+| `SUBMITTED` | Status callback `submitted` | Passed to a messaging provider. This is not delivery. | No |
+| `DELIVERED` | Status callback `delivered` | Delivered to the recipient. | Yes |
+| `REJECTED` | Status callback `rejected` | Rejected by the provider. | Yes |
+| `UNDELIVERABLE` | Status callback `undeliverable` | Could not be delivered. | Yes |
+
+Allowed transitions:
+
+- `PENDING` → `ACCEPTED` (with `provider_message_id`) or `REQUEST_FAILED` (with `failure_reason`).
+- `ACCEPTED` → `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
+- `SUBMITTED` → `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
+- A final state has no outgoing transition. Both no-request states are created directly as final.
+
+Proposed rules for provider status updates (to be applied by [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)):
+
+- A repeated status equal to the current one is a no-op.
+- A status received for a notification already in a final state is ignored rather than rejected, because the reviewed documentation does not guarantee callback ordering or exactly-once delivery.
+- A request-side transition that is invalid for the current state (for example, marking a no-request notification as accepted) is a programming error and fails explicitly.
+- `failure_reason` values: `PROVIDER_REQUEST_REJECTED` (the request was refused), `PROVIDER_UNAVAILABLE` (the provider could not be reached or returned a server error), and `PROVIDER_TIMEOUT` (outcome unknown; the SMS may or may not have been sent, and is not retried as if idempotent).
+- These rules are enforced by the notification entity and covered by unit tests in [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30); [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) and [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) call them rather than redefining them.
+
+#### Proposed correlation (pending mentor approval)
+
+- Lookup by reservation: `reservation_id` is unique, so it returns at most one notification.
+- Lookup by provider message: `provider_message_id` is unique and only set once Vonage returns `202 Accepted`, so a status callback matches at most one notification. A callback whose `message_uuid` matches no row must not modify any notification ([#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)).
+- The entity stores the reservation identifier as a plain `UUID` without a JPA association; the database foreign key enforces the relationship. This keeps notification code from loading or modifying a `Reservation`.
 
 ### Vonage integration
 
