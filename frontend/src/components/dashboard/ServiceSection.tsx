@@ -1,14 +1,16 @@
 import {
   Alert,
+  Badge,
   CapacityIndicator,
   Card,
   Table,
 } from "@/components/ui";
 import type { TableColumn } from "@/components/ui";
+import type { ReservationItem } from "@/lib/reservations";
 
 import { LoadingState } from "./LoadingState";
 
-export type ServiceSectionStatus = "loading" | "empty" | "error";
+export type ServiceSectionStatus = "loading" | "success" | "error";
 
 export interface ServiceSectionProps {
   title: string;
@@ -16,6 +18,7 @@ export interface ServiceSectionProps {
   total: number;
   occupied: number;
   available: number;
+  reservations: ReservationItem[];
   status: ServiceSectionStatus;
   error?: string;
 }
@@ -25,8 +28,8 @@ type ReservationRow = {
   name: string;
   phone: string;
   time: string;
-  party: string;
-  status: string;
+  party: number;
+  status: ReservationItem["status"];
 };
 
 const reservationColumns: TableColumn<ReservationRow>[] = [
@@ -34,8 +37,29 @@ const reservationColumns: TableColumn<ReservationRow>[] = [
   { key: "phone", header: "Phone", cell: (row) => row.phone },
   { key: "time", header: "Time", cell: (row) => row.time },
   { key: "party", header: "Party", cell: (row) => row.party },
-  { key: "status", header: "Status", cell: (row) => row.status },
+  {
+    key: "status",
+    header: "Status",
+    cell: (row) => (
+      <Badge variant={row.status === "CONFIRMED" ? "success" : "neutral"}>
+        {row.status === "CONFIRMED" ? "Confirmed" : row.status}
+      </Badge>
+    ),
+  },
 ];
+
+function toRow(reservation: ReservationItem): ReservationRow {
+  return {
+    id: reservation.id,
+    name: [reservation.customerFirstName, reservation.customerLastName]
+      .filter(Boolean)
+      .join(" "),
+    phone: reservation.phoneNumber,
+    time: reservation.arrivalTime,
+    party: reservation.partySize,
+    status: reservation.status,
+  };
+}
 
 export function ServiceSection({
   title,
@@ -43,10 +67,12 @@ export function ServiceSection({
   total,
   occupied,
   available,
+  reservations,
   status,
   error,
 }: ServiceSectionProps) {
   const headingId = `${title.toLowerCase()}-heading`;
+  const rows = reservations.map(toRow);
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
@@ -80,9 +106,9 @@ export function ServiceSection({
             <Table
               caption={`${title} reservations`}
               columns={reservationColumns}
-              rows={[]}
+              rows={rows}
               rowKey={(row) => row.id}
-              emptyMessage="No reservations to show yet. Reservation data will appear here once it is connected."
+              emptyMessage={`No ${title.toLowerCase()} reservations for this date.`}
             />
           )}
         </div>
