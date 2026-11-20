@@ -5,7 +5,7 @@ import {
   Card,
   Table,
 } from "@/components/ui";
-import type { TableColumn } from "@/components/ui";
+import type { BadgeVariant, TableColumn } from "@/components/ui";
 import type { ReservationItem } from "@/lib/reservations";
 
 import { LoadingState } from "./LoadingState";
@@ -32,6 +32,20 @@ type ReservationRow = {
   status: ReservationItem["status"];
 };
 
+const STATUS_PRESENTATION: Record<
+  string,
+  { label: string; variant: BadgeVariant }
+> = {
+  CONFIRMED: { label: "Confirmed", variant: "success" },
+};
+
+function statusPresentation(status: string): {
+  label: string;
+  variant: BadgeVariant;
+} {
+  return STATUS_PRESENTATION[status] ?? { label: status, variant: "neutral" };
+}
+
 const reservationColumns: TableColumn<ReservationRow>[] = [
   { key: "name", header: "Name", cell: (row) => row.name },
   { key: "phone", header: "Phone", cell: (row) => row.phone },
@@ -40,11 +54,10 @@ const reservationColumns: TableColumn<ReservationRow>[] = [
   {
     key: "status",
     header: "Status",
-    cell: (row) => (
-      <Badge variant={row.status === "CONFIRMED" ? "success" : "neutral"}>
-        {row.status === "CONFIRMED" ? "Confirmed" : row.status}
-      </Badge>
-    ),
+    cell: (row) => {
+      const { label, variant } = statusPresentation(row.status);
+      return <Badge variant={variant}>{label}</Badge>;
+    },
   },
 ];
 
