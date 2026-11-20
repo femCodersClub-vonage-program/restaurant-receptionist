@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Button, Header, Input } from "@/components/ui";
+import { Alert, Button, Header, Input } from "@/components/ui";
 import { ServiceSection } from "@/components/dashboard";
 import {
   fetchReservationsByDate,
@@ -82,7 +82,7 @@ export default function DashboardView() {
         }
         setData(null);
         setErrorMessage(error instanceof Error ? error.message : GENERIC_ERROR);
-        setAnnouncement("Could not load reservations. Please try again.");
+        setAnnouncement("");
       });
   }, []);
 
@@ -139,24 +139,29 @@ export default function DashboardView() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-6">
-        {SESSIONS.map((session) => {
-          const sessionData = data?.sessions[session.key];
-          return (
-            <ServiceSection
-              key={session.key}
-              title={session.title}
-              arrivalWindow={session.arrivalWindow}
-              total={sessionData?.capacity.totalCapacity ?? 0}
-              occupied={sessionData?.capacity.occupiedCapacity ?? 0}
-              available={sessionData?.capacity.availableCapacity ?? 0}
-              reservations={sessionData?.reservations ?? []}
-              status={status}
-              error={errorMessage ?? undefined}
-            />
-          );
-        })}
-      </div>
+      {status === "error" ? (
+        <Alert variant="error" title="Could not load reservations">
+          {errorMessage ?? GENERIC_ERROR}
+        </Alert>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {SESSIONS.map((session) => {
+            const sessionData = data?.sessions[session.key];
+            return (
+              <ServiceSection
+                key={session.key}
+                title={session.title}
+                arrivalWindow={session.arrivalWindow}
+                total={sessionData?.capacity.totalCapacity ?? 0}
+                occupied={sessionData?.capacity.occupiedCapacity ?? 0}
+                available={sessionData?.capacity.availableCapacity ?? 0}
+                reservations={sessionData?.reservations ?? []}
+                status={status}
+              />
+            );
+          })}
+        </div>
+      )}
     </main>
   );
 }

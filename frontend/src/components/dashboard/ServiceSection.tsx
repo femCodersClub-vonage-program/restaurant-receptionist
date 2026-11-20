@@ -1,5 +1,4 @@
 import {
-  Alert,
   Badge,
   CapacityIndicator,
   Card,
@@ -10,7 +9,7 @@ import type { ReservationItem } from "@/lib/reservations";
 
 import { LoadingState } from "./LoadingState";
 
-export type ServiceSectionStatus = "loading" | "success" | "error";
+export type ServiceSectionStatus = "loading" | "success";
 
 export interface ServiceSectionProps {
   title: string;
@@ -20,7 +19,6 @@ export interface ServiceSectionProps {
   available: number;
   reservations: ReservationItem[];
   status: ServiceSectionStatus;
-  error?: string;
 }
 
 type ReservationRow = {
@@ -82,7 +80,6 @@ export function ServiceSection({
   available,
   reservations,
   status,
-  error,
 }: ServiceSectionProps) {
   const headingId = `${title.toLowerCase()}-heading`;
   const rows = reservations.map(toRow);
@@ -104,10 +101,6 @@ export function ServiceSection({
             <LoadingState
               message={`Loading ${title.toLowerCase()} reservations…`}
             />
-          ) : status === "error" ? (
-            <Alert variant="error" title="Could not load reservations">
-              {error ?? "Reservation data could not be loaded. Please try again."}
-            </Alert>
           ) : (
             <>
               <CapacityIndicator
