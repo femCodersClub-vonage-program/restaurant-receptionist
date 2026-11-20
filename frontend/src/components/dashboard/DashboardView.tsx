@@ -40,6 +40,17 @@ function todayInEuropeMadrid(): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
+function formatReadableDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(parsed);
+}
+
 export default function DashboardView() {
   const [date, setDate] = useState<string>(() => todayInEuropeMadrid());
   const [data, setData] = useState<ReservationsResponse | null>(null);
@@ -63,7 +74,7 @@ export default function DashboardView() {
         }
         setData(result);
         setErrorMessage(null);
-        setAnnouncement(`Loaded reservations for ${targetDate}.`);
+        setAnnouncement(`Loaded reservations for ${formatReadableDate(targetDate)}.`);
       })
       .catch((error: unknown) => {
         if (latestRequestRef.current !== requestId) {
