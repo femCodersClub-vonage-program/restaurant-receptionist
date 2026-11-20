@@ -94,6 +94,7 @@ export default function DashboardView() {
     if (!nextDate) {
       return;
     }
+    latestRequestRef.current += 1;
     setDate(nextDate);
     setData(null);
     setErrorMessage(null);
