@@ -100,13 +100,6 @@ export function ServiceSection({
             </p>
           </div>
 
-          <CapacityIndicator
-            label={title}
-            total={total}
-            occupied={occupied}
-            available={available}
-          />
-
           {status === "loading" ? (
             <LoadingState
               message={`Loading ${title.toLowerCase()} reservations…`}
@@ -116,13 +109,21 @@ export function ServiceSection({
               {error ?? "Reservation data could not be loaded. Please try again."}
             </Alert>
           ) : (
-            <Table
-              caption={`${title} reservations`}
-              columns={reservationColumns}
-              rows={rows}
-              rowKey={(row) => row.id}
-              emptyMessage={`No ${title.toLowerCase()} reservations for this date.`}
-            />
+            <>
+              <CapacityIndicator
+                label={title}
+                total={total}
+                occupied={occupied}
+                available={available}
+              />
+              <Table
+                caption={`${title} reservations`}
+                columns={reservationColumns}
+                rows={rows}
+                rowKey={(row) => row.id}
+                emptyMessage={`No ${title.toLowerCase()} reservations for this date.`}
+              />
+            </>
           )}
         </div>
       </Card>
