@@ -113,7 +113,7 @@ Table `reservation_notifications`:
 Structural constraints:
 
 - `provider_message_id` is present if and only if `status` is `ACCEPTED`, `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
-- `failure_reason` is required when `status` is `REQUEST_FAILED` (`PROVIDER_REQUEST_REJECTED` or `PROVIDER_UNAVAILABLE`) or `REQUEST_OUTCOME_UNKNOWN` (`PROVIDER_TIMEOUT` only), and absent for every other state, including `REJECTED` and `UNDELIVERABLE`. Provider error codes for those states are not verified; [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) may add them with a new migration.
+- `failure_reason` is required when `status` is `REQUEST_FAILED` (`PROVIDER_REQUEST_REJECTED` or `PROVIDER_UNAVAILABLE`) or `REQUEST_OUTCOME_UNKNOWN` (`PROVIDER_OUTCOME_UNKNOWN` only), and absent for every other state, including `REJECTED` and `UNDELIVERABLE`. Provider error codes for those states are not verified; [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) may add them with a new migration.
 - The table stores no SMS content, contact number, raw request or callback payload, or credential. The reservation's `status` column is never written by notification code.
 
 #### States and transitions
@@ -124,7 +124,7 @@ Structural constraints:
 | `NOT_REQUESTED_CAPABILITY_UNKNOWN` | RN-08 | The customer did not know whether the number can receive SMS. No request is made. | Yes |
 | `PENDING` | Application | Recorded immediately before the Messages request, so that a crash or timeout leaves a trace. | No |
 | `REQUEST_FAILED` | Messages request | The request is known not to have been accepted (refused by Vonage, or no connection was established). Requires a `failure_reason`. | Yes |
-| `REQUEST_OUTCOME_UNKNOWN` | Messages request | The outcome is ambiguous (timeout, interrupted response, or server error): Vonage may still have accepted the request. Requires `PROVIDER_TIMEOUT`. A later status callback can resolve it. | No |
+| `REQUEST_OUTCOME_UNKNOWN` | Messages request | The outcome is ambiguous (timeout, interrupted response, or server error): Vonage may still have accepted the request. Requires `PROVIDER_OUTCOME_UNKNOWN`. A later status callback can resolve it. | No |
 | `ACCEPTED` | Messages `202 Accepted` | Vonage accepted the request and returned a `message_uuid`. This is not delivery. | No |
 | `SUBMITTED` | Status callback `submitted` | Passed to a messaging provider. This is not delivery. | No |
 | `DELIVERED` | Status callback `delivered` | Delivered to the recipient. | Yes |
@@ -133,7 +133,7 @@ Structural constraints:
 
 Allowed transitions:
 
-- `PENDING` → `ACCEPTED` (with `provider_message_id`), `REQUEST_FAILED` (with `failure_reason`), or `REQUEST_OUTCOME_UNKNOWN` (with `PROVIDER_TIMEOUT`).
+- `PENDING` → `ACCEPTED` (with `provider_message_id`), `REQUEST_FAILED` (with `failure_reason`), or `REQUEST_OUTCOME_UNKNOWN` (with `PROVIDER_OUTCOME_UNKNOWN`).
 - `ACCEPTED` or `REQUEST_OUTCOME_UNKNOWN` → `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
 - `SUBMITTED` → `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
 - Resolving `REQUEST_OUTCOME_UNKNOWN` stores the callback's `message_uuid` as `provider_message_id` and clears `failure_reason`.
@@ -144,7 +144,7 @@ Rules for provider status updates (applied by [#34](https://github.com/femCoders
 - A repeated status equal to the current one is a no-op.
 - A status received for a notification already in a final state is ignored rather than rejected, because the reviewed documentation does not guarantee callback ordering or exactly-once delivery.
 - A request-side transition that is invalid for the current state (for example, marking a no-request notification as accepted) is a programming error and fails explicitly.
-- `failure_reason` values: `PROVIDER_REQUEST_REJECTED` (Vonage refused the request), `PROVIDER_UNAVAILABLE` (no connection was established, so the request never left the application), and `PROVIDER_TIMEOUT` (timeout, interrupted response, or server error; the SMS may or may not have been sent and is not retried as if idempotent). The exact mapping from HTTP outcomes is defined by [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) against the verified contract.
+- `failure_reason` values: `PROVIDER_REQUEST_REJECTED` (Vonage refused the request), `PROVIDER_UNAVAILABLE` (no connection was established, so the request never left the application), and `PROVIDER_OUTCOME_UNKNOWN` (timeout, interrupted response, or server error; the SMS may or may not have been sent and is not retried as if idempotent). The exact mapping from HTTP outcomes is defined by [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) against the verified contract.
 - These rules are enforced by the notification entity and covered by unit tests in [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30); [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) and [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) call them rather than redefining them.
 
 #### Correlation
