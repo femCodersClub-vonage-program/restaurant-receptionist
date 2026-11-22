@@ -13,14 +13,14 @@ There is no universal MCP config file. Each client keeps its own, but the server
 | GitHub Copilot CLI | `~/.copilot/mcp-config.json` (`COPILOT_HOME` overrides the directory) | JSON, top-level `mcpServers` |
 | VS Code with Copilot | VS Code's own MCP configuration (user or workspace); not `~/.copilot/mcp-config.json` | JSON, VS Code MCP format |
 | Claude Code | `~/.claude.json`, written by `claude mcp add --scope user` | JSON, `mcpServers` entry |
-| Codex CLI | `~/.codex/config.toml` | TOML, `[mcp_servers.<name>]` table |
+| Codex | `~/.codex/config.toml` | TOML, `[mcp_servers.<name>]` table |
 | OpenCode | `~/.config/opencode/opencode.json` | JSON, `mcp.servers` |
 
 Do not add a repository-root `.mcp.json`, `.vscode/mcp.json`, `.codex/config.toml`, or any other project-scoped MCP file. Claude Code and Codex CLI both offer project scope and VS Code offers a workspace file, but MCP configuration stays personal here so credentials never reach source control. For an unlisted client, use its own setup flow with the same entry; see Vonage's [Tooling MCP installation guide](https://developer.vonage.com/en/mcp-server/how-to-guides/install-tooling-mcp-server).
 
 ### The server entry
 
-All clients start `@vonage/vonage-mcp-server-api-bindings` over stdio with `npx`. Fill in your account key and secret; keep the other values empty.
+All clients start `@vonage/vonage-mcp-server-api-bindings` over stdio. The common entry below uses `npx`; the Codex section shows the Windows form that was verified. Fill in your account key and secret; keep the other values empty.
 
 ```json
 {
@@ -106,21 +106,23 @@ claude mcp list
 
 It prints a status per server, such as `Connected` or `Failed to connect`; `claude mcp get vonage` shows the detail.
 
-### Codex CLI
+### Codex
 
 Codex reads `~/.codex/config.toml`. Add this table:
 
 ```toml
 [mcp_servers.vonage]
-command = "npx"
-args = ["-y", "@vonage/vonage-mcp-server-api-bindings"]
+command = "npx.cmd"
+args = [
+  "--yes",
+  "--package=@vonage/auth@1.19.1",
+  "--package=@vonage/vonage-mcp-server-api-bindings@1.5.1",
+  "--",
+  "vonage-mcp-server-api-bindings",
+]
 startup_timeout_sec = 60
 enabled_tools = [
-  "balance",
-  "list-applications",
-  "list-purchased-numbers",
-  "get-records-report",
-  "make-chart",
+  "balance"
 ]
 
 [mcp_servers.vonage.env]
@@ -132,7 +134,7 @@ VONAGE_VIRTUAL_NUMBER = ""
 VONAGE_WHATSAPP_NUMBER = ""
 ```
 
-`startup_timeout_sec = 60` replaces the 10-second default, which is short for a cold `npx` run. `enabled_tools` keeps the exposed set to the read-only tools in [Scope of the checks](#scope-of-the-checks). Use `~/.codex/config.toml`, not a project-scoped `.codex/config.toml`, and keep the file private: it holds the secret.
+This block was run on Windows in the Codex desktop app; the Codex CLI and macOS were not verified. On macOS use `command = "npx"`; that variant, including whether the pinned packages are needed there, is untested. `startup_timeout_sec = 60` replaces the 10-second default, which is short for a cold `npx` run. `enabled_tools` keeps the exposed set read-only; add the other read-only tools listed under OpenCode if you need them, since only `balance` was exercised through Codex. Use `~/.codex/config.toml`, not a project-scoped `.codex/config.toml`, and keep the file private: it holds the secret.
 
 ### OpenCode
 
@@ -192,7 +194,7 @@ The agent should call the `balance` tool. Only that visible tool call verifies t
 | OpenCode | `opencode mcp list` |
 | Claude Code | `claude mcp list` |
 
-Codex and VS Code show connection state in their own interfaces; this guide does not claim a specific command for them.
+Codex shows connection state in the app's own interface; the `balance` tool call is the verification. VS Code is unverified here.
 
 ## 3. Configure and check the Vonage CLI
 
@@ -201,6 +203,8 @@ The CLI is a separate required setup in issue #27 and does not read the MCP conf
 ```shell
 npm install -g @vonage/cli
 ```
+
+The Windows check used Node 22.18.0, npm 10.9.3, and `@vonage/cli@3.3.1`. The install printed `EBADENGINE` warnings for Prism dependencies that declare Node 24.18.0; `vonage auth set` and `vonage balance` still succeeded.
 
 `vonage auth set` accepts `--api-secret` as a documented option (Vonage's [CLI guide](https://developer.vonage.com/en/vonage-cli/getting-started)). The prompts below hide the secret while you type and keep it out of shell history, but it is passed as a process argument and may be visible to local process-inspection tools. Run this only on your trusted personal computer, and do not record the session.
 
@@ -249,8 +253,9 @@ Read-only is the scope of this setup, not of the product: the application will r
 
 ## Validation status
 
-- CLI `@vonage/cli@3.3.1` installed and checked on Windows; a teammate confirmed `vonage auth set` and `vonage balance` with her account.
+- CLI `@vonage/cli@3.3.1` on Windows with Node 22.18.0 and npm 10.9.3: `vonage auth set` and `vonage balance` succeeded with a participant's own account; the `EBADENGINE` warnings did not block them.
 - MCP `@vonage/vonage-mcp-server-api-bindings` `balance` through an AI agent succeeded; do not share the returned balance.
+- Codex desktop app on Windows, with a participant's own account: the `balance` tool call succeeded using the block in section 1.
 - OpenCode `2.3.2` on Windows: `opencode mcp list` reported `connected`, a native `balance` call succeeded, and all five read-only tools stayed reachable with the hyphenated allow rules in section 1. A hyphenated read-only tool (`list-applications`) was invoked successfully without recording its output. Switching those rules to underscores removed `list-applications` and `list-purchased-numbers`, so the guide keeps hyphens for this version (see the note in section 1).
-- The Claude Code, Codex CLI, and VS Code subsections come from each client's official documentation on 2026-11-19. Nobody has run them, and none of those clients was installed on the machine used for the OpenCode check.
-- macOS commands are untested, and a second participant has not yet followed the guide, which is planned after the merge.
+- The Codex, Claude Code, and VS Code subsections otherwise come from each client's official documentation on 2026-11-19; their CLI commands have not been run, and Codex Desktop was exercised without a separately installed Codex CLI.
+- macOS commands are untested, and an independent second participant has not yet followed the guide.

@@ -2,7 +2,7 @@
 
 > Issue: [#27](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/27) | Branch: `docs/27-vonage-tooling-setup`
 > Status: ready
-> Last updated: 2026-11-16
+> Last updated: 2026-11-22
 
 ---
 
@@ -93,3 +93,5 @@ Not applicable to the restaurant UI.
 ## Notes
 
 The deliverable is a working local installation of both tools plus a concise guide linked from this spec. No account mutation or credit-consuming operation is implied by approval of this spec.
+
+Feedback (2026-11-22): the mentor reproduced the CLI setup and the Codex desktop MCP `balance` call on Windows with her own account; the Codex configuration in the guide reflects that working setup. Independent verification and the remaining client paths are still open.
