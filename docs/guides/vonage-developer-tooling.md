@@ -11,7 +11,7 @@ There is no universal MCP config file. Each client keeps its own, but the server
 | Client | Personal configuration file | Format |
 | --- | --- | --- |
 | GitHub Copilot CLI | `~/.copilot/mcp-config.json` (`COPILOT_HOME` overrides the directory) | JSON, top-level `mcpServers` |
-| VS Code with the Copilot harness | Same `~/.copilot/mcp-config.json` | JSON, top-level `mcpServers` |
+| VS Code with Copilot | VS Code's own MCP configuration (user or workspace); not `~/.copilot/mcp-config.json` | JSON, VS Code MCP format |
 | Claude Code | `~/.claude.json`, written by `claude mcp add --scope user` | JSON, `mcpServers` entry |
 | Codex CLI | `~/.codex/config.toml` | TOML, `[mcp_servers.<name>]` table |
 | OpenCode | `~/.config/opencode/opencode.json` | JSON, `mcp.servers` |
@@ -55,7 +55,7 @@ Keep the secret only in your personal config. If one is exposed, create a replac
 
 ### GitHub Copilot CLI
 
-`~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`) with a top-level `mcpServers` object. Copilot in VS Code reads this same file.
+`~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`) with a top-level `mcpServers` object. This file is the personal configuration for GitHub Copilot CLI; it is not the configuration for Copilot in VS Code.
 
 **Windows PowerShell**
 
@@ -79,16 +79,16 @@ open -e "$HOME/.copilot/mcp-config.json"
 
 Preserve any other servers already in the file and add the entry above inside `mcpServers`.
 
-### VS Code with the Copilot harness
+### VS Code with Copilot (unverified)
 
-No separate file: the Copilot harness reads `~/.copilot/mcp-config.json`. Configure it from the editor instead of editing JSON by hand:
+`~/.copilot/mcp-config.json` is the personal configuration for GitHub Copilot CLI, not for Copilot in VS Code. These steps were followed by a teammate using the Copilot harness inside VS Code chat; they configure that harness (which writes to `~/.copilot/mcp-config.json`) and are not the same as VS Code's own editor-native MCP configuration. The subsection is otherwise unverified: nobody else on the team has reproduced it, and it has not been checked against VS Code's current release.
 
 1. Select the **Copilot** harness in a chat session.
 2. Run **Chat: Open Customizations**, then select **MCP Servers**.
 3. Select **Add Server**, choose the stdio transport, and enter `npx` with `-y @vonage/vonage-mcp-server-api-bindings`.
 4. Choose **Global** > **Copilot Global** as the destination.
 
-Do not use **MCP: Open User Configuration**, `code --add-mcp`, or a workspace `.vscode/mcp.json`: those write the editor-managed format, which the Copilot harness does not read directly.
+For VS Code's own (editor-native) MCP setup, follow the official VS Code instructions instead: https://code.visualstudio.com/docs/copilot/chat/mcp-servers. Keep the server entry identical to the one above (same command, args, and env) and store credentials in your personal VS Code configuration, never in a workspace `.vscode/mcp.json` that could reach source control.
 
 ### Claude Code
 
@@ -175,7 +175,9 @@ The block below is optional and keeps the agent read-only. Rules are ordered and
 }
 ```
 
-Tool names keep their hyphens: `vonage_list-applications`, not `vonage_list_applications`. Underscores match nothing and the `deny` rule wins.
+In OpenCode 2.3.2 (the version tested here) the permission action names keep the hyphens of the underlying tool names, so the allow rules above use hyphens and leave all five read-only tools reachable. `vonage_balance` needs no change because it contains no hyphen.
+
+Note on version differences: OpenCode's documentation and issue #63555 describe the action names as normalized (unsupported characters become underscores), and PR #63881 changes the core to do that normalization. In a version where that fix is active, the rules above must be rewritten with underscores (`vonage_list_applications`, etc.); with hyphens they would stop matching and the catch-all `deny` would hide the tools. If you upgrade OpenCode and the read-only tools disappear, switch the four rules above to underscores and re-check.
 
 ## 2. Check the MCP connection
 
@@ -249,6 +251,6 @@ Read-only is the scope of this setup, not of the product: the application will r
 
 - CLI `@vonage/cli@3.3.1` installed and checked on Windows; a teammate confirmed `vonage auth set` and `vonage balance` with her account.
 - MCP `@vonage/vonage-mcp-server-api-bindings` `balance` through an AI agent succeeded; do not share the returned balance.
-- OpenCode `2.3.2` on Windows: `opencode mcp list` reported `connected`, a native `balance` call succeeded, and the allowlist left only the five read-only tools reachable.
+- OpenCode `2.3.2` on Windows: `opencode mcp list` reported `connected`, a native `balance` call succeeded, and all five read-only tools stayed reachable with the hyphenated allow rules in section 1. A hyphenated read-only tool (`list-applications`) was invoked successfully without recording its output. Switching those rules to underscores removed `list-applications` and `list-purchased-numbers`, so the guide keeps hyphens for this version (see the note in section 1).
 - The Claude Code, Codex CLI, and VS Code subsections come from each client's official documentation on 2026-11-19. Nobody has run them, and none of those clients was installed on the machine used for the OpenCode check.
 - macOS commands are untested, and a second participant has not yet followed the guide, which is planned after the merge.
