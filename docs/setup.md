@@ -167,6 +167,25 @@ npm run dev
 
 Open `http://localhost:3000`. Stop the development server with `Ctrl+C`.
 
+### Backend URL for API requests
+
+The dashboard reaches the backend through a Next.js rewrite that proxies `/api/reservations` to the backend. The proxy target is the optional `BACKEND_URL` environment variable and defaults to `http://localhost:8080`. It is a server-side, non-secret value; never include credentials in it.
+
+Set `BACKEND_URL` only when the local backend runs on a different URL, for example another port. Set it in the same shell or terminal session before starting the frontend:
+
+**Windows (PowerShell):**
+```powershell
+$env:BACKEND_URL = 'http://localhost:9090'
+npm run dev
+```
+
+**macOS (Terminal):**
+```bash
+BACKEND_URL='http://localhost:9090' npm run dev
+```
+
+Restart the frontend development server after changing `BACKEND_URL` so the rewrite uses the new value.
+
 Validate the frontend before opening a pull request:
 
 **For both Windows and macOS:**
