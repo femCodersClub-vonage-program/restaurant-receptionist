@@ -1,12 +1,12 @@
-package com.restaurantreceptionist.voice_call_session;
+package com.restaurantreceptionist.voice;
 
 public enum CurrentStep {
 	INITIAL_GREETING,
 	RESERVATION_DATE,
 	ARRIVAL_TIME,
-	GUESTS_NUMBER,
+	PARTY_SIZE,
 	FIRST_NAME,
-	SECOND_NAME,
+	LAST_NAME,
 	PHONE_NUMBER,
 	FINAL_CONFIRMATION
 }

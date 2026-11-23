@@ -1,4 +1,4 @@
-package com.restaurantreceptionist.voice_call_session;
+package com.restaurantreceptionist.voice;
 
 public enum CallState {
 	ACTIVE,
