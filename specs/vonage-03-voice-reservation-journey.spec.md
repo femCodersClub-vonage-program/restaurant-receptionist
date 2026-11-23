@@ -18,6 +18,7 @@ Connect a guided Voice flow to the existing reservation services. Capture and va
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
+| [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Voice webhooks. | #35 can use a verifier double during development and must integrate the real verifier before closure. |
 | [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35) | Handle an incoming call, maintain the minimal call session, and deduplicate repeated events. | Planned and blocked by #26 evidence for Voice webhooks, identifiers, authentication, and response behaviour; persistence is undecided. |
 | [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36) | Ask for the required fields, validate them, handle silence/invalid input, three attempts per field, and one-field correction. | Planned and blocked by #26, #35, and mentor decisions that affect capture. |
 | [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37) | Read back details, require affirmative confirmation, call #7 for atomic creation, and use #19 for the same-date alternative when needed. | Planned and blocked by #26, #7, #19, #36, and relevant mentor decisions. |
