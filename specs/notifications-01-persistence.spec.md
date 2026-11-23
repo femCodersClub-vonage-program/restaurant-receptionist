@@ -1,8 +1,8 @@
 # Spec: Reservation confirmation notification journey
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
-> Status: #30 ready for planning but blocked for implementation; #33 and #34 planned and blocked
-> Last updated: 2026-11-17
+> Status: #30 implementation approved; #33 and #34 depend on #30.
+> Last updated: 2026-11-23
 
 ---
 
@@ -18,22 +18,23 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state and correlation data. The approved no-request reason needs to be reflected in the reviewed state mapping and issue scope before implementation. | Published and ready for planning; implementation blocked by mentor-reviewed #26 findings and approved state mapping. |
-| [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Planned and blocked; depends on #26, #7, #30, verified Messages request contract, and approval of the send/correlation design. |
-| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
+| [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Messages status callbacks. | #34 can use a verifier double during development and must integrate the real verifier before closure. |
+| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state and correlation data. Record why an SMS was not requested when eligibility is negative or unknown. | Implementation approved following the [state and schema review](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53#issuecomment-7035156930). |
+| [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Start after #30 merges and the remaining request contract and status mapping are approved. Send the notification UUID as `client_ref`. |
+| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Start after #30 merges and remaining callback details are approved. Use stored fixtures to work in parallel with #33. Integrate #56 before closure; verify the combined send-to-status journey in #38. |
 
 Each issue links back to this spec. The later slices do not expand #30.
 
 ## Scope
 
-The scope and acceptance criteria in this section describe the published #30 persistence issue. Align its issue text with the newly approved no-request policy before implementation. The later slices are specified separately below.
+The scope and acceptance criteria in this section describe the published #30 persistence issue. PR #53 records the approved notification state and correlation decisions. The later slices are specified separately below.
 
 ### In scope
 
 - [ ] Propose and approve the notification entity/table fields, allowed state transitions, and relationship to a reservation using the verified Messages contract.
 - [ ] Persist a known request state, provider identifier when returned, and failure category or safe reason when available.
 - [ ] Keep a confirmed reservation intact when a notification is failed or undeliverable.
-- [ ] Incorporate the approved distinction among no SMS requested because the number cannot receive it, no SMS requested because capability is unknown, and a failed request or delivery into the reviewed #30 state mapping and issue scope. The exact persistence representation awaits #26.
+- [ ] Persist distinct reasons for negative and unknown SMS capability according to the reviewed #30 state mapping.
 - [ ] Add a new Flyway migration, JPA mapping/repository, and PostgreSQL-backed tests for constraints and retrieval by reservation/provider identifier.
 
 ### Out of scope
@@ -57,30 +58,30 @@ The scope and acceptance criteria in this section describe the published #30 per
 - Trigger only after a telephone reservation has been persisted as confirmed through #7 and the customer confirms that the contact number can receive SMS. Record the no-request reason when the number cannot receive SMS or its capability is unknown. Do not request a message after rejected, abandoned, or unconfirmed attempts.
 - Use the approved persistence operations from #30 to record a request attempt and its known outcome. Distinguish provider acceptance from recipient delivery.
 - Keep the reservation confirmed if the provider request fails, times out, or has an ambiguous outcome. Record a safe diagnostic state without assuming a retry policy.
-- Define the exact Messages request, authentication, response mapping, and correlation from the completed #26 research before implementation. Manual reservations follow the same approved product policy, but their SMS trigger is later work after the telephone journey and needs reviewed issue scope.
+- Use the notification UUID as `client_ref`. Confirm request authentication and response mapping against the completed #26 research before implementation. Manual reservations follow the same approved product policy, but their SMS trigger is later work after the telephone journey and needs reviewed issue scope.
 - Validate with provider test doubles, including accepted, rejected, failed, and ambiguous request outcomes. No automated test may spend credits by default.
 
 ### Delivery-status callbacks
 
-- Match a callback to a known notification using only identifiers and semantics confirmed by #26. Unknown or ambiguous correlations must not mutate another reservation or notification.
+- Match the callback's `message_uuid` to `provider_message_id` first. If no row matches, use `client_ref` to look up the notification UUID. Unknown or ambiguous matches must leave all records unchanged.
 - Verify callback authentication and required response behaviour from the official contract before implementing an endpoint. Do not assume a signature format, payload, or retry schedule.
 - Apply approved state transitions idempotently: repeated or out-of-order callbacks must not duplicate effects or regress a final state without an explicitly approved rule.
 - Retain only safe status and failure information; do not store raw webhook bodies or sensitive provider errors.
 - Validate authenticated/invalid, duplicate, out-of-order, unknown-correlation, and failure cases with test doubles and PostgreSQL-backed tests where state transitions or constraints are involved.
 
-These later slices are planning boundaries, not approved provider contracts or permission to implement. Their precise acceptance criteria and blockers must be finalized in their issues after #26 and mentor review.
+These later slices are planning boundaries, not approved provider contracts or permission to implement. The linked issues record approved decisions, remaining contract details and integration requirements.
 
 ## Business rules and decisions
 
 - Business rules: [RN-06](../docs/business-rules.md#rn-06-confirmation-messages) and [RN-08](../docs/business-rules.md#rn-08-contact-phone-and-sms-eligibility).
 - Related ADRs: [ADR-004](../docs/adr/004-adopt-flyway-migration-coordination-policy.md).
-- Open questions: final provider status mapping, request/callback correlation and authentication, ambiguous request outcomes, and the reviewed implementation scope for manual SMS. The manual product policy is approved; resolve questions affecting each slice before that slice starts.
+- Confirm the remaining send and callback contract details in #33 and #34 using the approved correlation rule above. Manual SMS triggering requires separately reviewed scope.
 
 ## Technical design
 
 ### Backend
 
-Provide persistence operations for notification records and lookup by verified provider identifier. Exact fields and transition rules are pending the Vonage research and mentor review.
+Provide persistence operations and correlation lookup using the schema and state transitions reviewed in PR #53.
 
 ### Frontend
 
@@ -116,9 +117,9 @@ Not applicable; no UI change.
 
 ## Dependencies and environment
 
-- [ ] Blocked by completion and mentor review of [Vonage contract research](vonage-01-contract-verification.spec.md).
+- [x] The completed [Vonage contract research](vonage-01-contract-verification.spec.md) supplies the provider baseline.
 - [ ] Depends on the existing [#4](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/4) reservation model. Coordinate with [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) for the post-persistence workflow.
 
 ## Notes
 
-Issue #30 is already published as planned work. Its implementation must wait for provider evidence and the approved state mapping. The later delivery-map entries are proposals until their own issue scopes and prerequisites are reviewed.
+PR #53 records the approved persistence design. The delivery map lists the remaining prerequisites for #33 and #34.
