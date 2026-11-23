@@ -2,8 +2,8 @@
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
 > Branch (#30): `feature/30-notification-persistence`
-> Status: #30 in progress; contract approved by mentor in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53). #33 and #34 planned and blocked
-> Last updated: 2026-11-20
+> Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #33 and #34 planned and blocked
+> Last updated: 2026-11-23
 
 ---
 
@@ -19,7 +19,7 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | In progress; [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
+| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | Done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Planned and blocked; depends on [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26), [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7), [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), verified Messages request contract, and approval of the send/correlation design. |
 | [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
 
@@ -32,10 +32,10 @@ The scope and acceptance criteria in this section describe the published #30 per
 ### In scope
 
 - [x] Propose and approve the notification entity/table fields, allowed state transitions, and relationship to a reservation using the verified Messages contract.
-- [ ] Persist a known request state, provider identifier when returned, and failure category or safe reason when available.
-- [ ] Keep a confirmed reservation intact when a notification is failed or undeliverable.
+- [x] Persist a known request state, provider identifier when returned, and failure category or safe reason when available.
+- [x] Keep a confirmed reservation intact when a notification is failed or undeliverable.
 - [x] Incorporate the approved distinction among no SMS requested because the number cannot receive it, no SMS requested because capability is unknown, and a failed request or delivery into the reviewed #30 state mapping. Represented by the two `NOT_REQUESTED_*` states, separate from `REQUEST_FAILED`, `REJECTED`, and `UNDELIVERABLE`.
-- [ ] Add a new Flyway migration, JPA mapping/repository, and PostgreSQL-backed tests for constraints and retrieval by reservation/provider identifier.
+- [x] Add a new Flyway migration, JPA mapping/repository, and PostgreSQL-backed tests for constraints and retrieval by reservation/provider identifier.
 
 ### Out of scope
 
@@ -45,11 +45,11 @@ The scope and acceptance criteria in this section describe the published #30 per
 
 ## Acceptance criteria
 
-- [ ] The approved schema associates notification state with its confirmed reservation without changing the reservation status on notification failure.
-- [ ] The stored states distinguish request acceptance from recipient delivery according to verified Messages behaviour.
-- [ ] The provider identifier and failure information needed by later callback handling can be stored and retrieved without duplicate or ambiguous correlation.
-- [ ] Migration and repository behaviour pass PostgreSQL-backed Testcontainers tests, including relevant constraints.
-- [ ] The issue and implementation PR name the migration file and confirm no version collision with `develop`.
+- [x] The approved schema associates notification state with its confirmed reservation without changing the reservation status on notification failure.
+- [x] The stored states distinguish request acceptance from recipient delivery according to verified Messages behaviour.
+- [x] The provider identifier and failure information needed by later callback handling can be stored and retrieved without duplicate or ambiguous correlation.
+- [x] Migration and repository behaviour pass PostgreSQL-backed Testcontainers tests, including relevant constraints.
+- [x] The issue and implementation PR name the migration file and confirm no version collision with `develop`.
 
 ## Later slices: SMS request and status callbacks
 
@@ -170,18 +170,18 @@ Not applicable; no UI change.
 
 ### Automated
 
-- [ ] Testcontainers tests verify migration, persistence, correlation lookup, constraints, and a failed notification leaving its reservation confirmed.
-- [ ] Unit tests cover state-transition rules if those rules are implemented in this issue.
+- [x] Testcontainers tests verify migration, persistence, correlation lookup, constraints, and a failed notification leaving its reservation confirmed.
+- [x] Unit tests cover state-transition rules if those rules are implemented in this issue.
 
 ### Manual verification
 
 - [x] Review the schema and state mapping against the completed official-contract evidence.
-- [ ] Check the proposed migration version against current `develop` before implementation and review.
+- [x] Check the proposed migration version against current `develop` before implementation and review.
 
 ## Dependencies and environment
 
 - [x] Completion and mentor review of [Vonage contract research](vonage-01-contract-verification.spec.md) ([#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26), closed).
-- [ ] Depends on the existing [#4](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/4) reservation model. Coordinate with [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) for the post-persistence workflow.
+- [x] Depends on the existing [#4](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/4) reservation model. Coordinate with [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7) for the post-persistence workflow.
 
 ## Notes
 
