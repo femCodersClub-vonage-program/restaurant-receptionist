@@ -1,14 +1,14 @@
 # Spec: Guided telephone reservation journey
 
 > Related issues: [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35), [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36), [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37)
-> Status: draft; all related issues are planned and blocked pending provider contracts and implementation review
-> Last updated: 2026-11-17
+> Status: #35 approved for implementation; see the delivery map for #36 and #37.
+> Last updated: 2026-11-23
 
 ---
 
 ## Problem
 
-The MVP needs an incoming caller to complete a guided reservation without overselling capacity or creating a reservation before explicit confirmation. The approved business rules describe the journey, but the project-specific Vonage Voice contracts are still being researched in [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26).
+The guided journey must preserve capacity and require explicit confirmation before creating a reservation. [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) records the provider research.
 
 ## Proposed solution
 
@@ -18,11 +18,12 @@ Connect a guided Voice flow to the existing reservation services. Capture and va
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35) | Handle an incoming call, maintain the minimal call session, and deduplicate repeated events. | Planned and blocked by #26 evidence for Voice webhooks, identifiers, authentication, and response behaviour; persistence is undecided. |
-| [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36) | Ask for the required fields, validate them, handle silence/invalid input, three attempts per field, and one-field correction. | Planned and blocked by #26, #35, and mentor decisions that affect capture. |
-| [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37) | Read back details, require affirmative confirmation, call #7 for atomic creation, and use #19 for the same-date alternative when needed. | Planned and blocked by #26, #7, #19, #36, and relevant mentor decisions. |
+| [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Voice webhooks. | #35 can use a verifier double during development and must integrate the real verifier before closure. |
+| [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35) | Handle an incoming call, maintain the minimal call session, and deduplicate repeated events. | Entry and PostgreSQL session design approved. Start with a verifier double and integrate #56 before closure. |
+| [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36) | Ask for the required fields, validate them, handle silence/invalid input, three attempts per field, and one-field correction. | Depends on #35. Agree the validated handoff to #37 with its owner. |
+| [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37) | Read back details, require affirmative confirmation, call #7 for atomic creation, and use #19 for the same-date alternative when needed. | Start after the #35 session model and the validated data and state from #36 are agreed and recorded. Close after integration with the merged #36 flow and verification that a confirmation creates at most one reservation. |
 
-These published issues define provisional delivery boundaries. Review and refine their contracts and acceptance criteria after #26; do not mark them ready for implementation until the relevant findings and decisions are approved. One issue may be split if its scope proves too large without duplicating this spec.
+The delivery map distinguishes prerequisites for starting each slice from integration requirements for closing it.
 
 ## Scope
 
@@ -63,15 +64,15 @@ These published issues define provisional delivery boundaries. Review and refine
 - The mentor has approved no maximum booking horizon for the MVP, bounded date expressions, contact-number and SMS eligibility policy, two correction rounds, two alternative dates, and no business-duplicate restriction. These are separate from provider-contract verification and do not make a blocked slice ready for implementation.
 - Open provider questions belong to #26: Spanish speech capture/playback, webhook authentication and retries, input/error payloads, event identifiers, and test prerequisites. Distinguish documented behaviour from local testing.
 
-## Technical design pending research
+## Technical design
 
 ### Backend and Voice integration
 
-Define the exact answer/event/input webhook routes, methods, payloads, responses, NCCO actions, authentication, correlation keys, and error handling after #26. Retain only the call state required for safe continuation and idempotency; decide whether it needs persistence, its lifetime, and its cleanup policy during slice review. Keep final reservation creation in #7.
+The [decision in #35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35#issuecomment-7099986230) defines the answer and event contracts. #35 returns the greeting, #36 adds speech input, and #37 uses #7 for final reservation creation.
 
 ### Data and migrations
 
-Assess call-session persistence and uniqueness constraints after the verified identifier and retry behaviour are known. Do not reserve a Flyway version or add fields from unverified provider assumptions.
+Use PostgreSQL for minimal call-session state with a unique call-leg UUID and migration `V3__create_voice_call_sessions.sql`. Review terminal-session retention and cleanup in the #35 PR.
 
 ### Frontend
 
@@ -89,4 +90,4 @@ Keep credentials and private keys in local configuration. Use fictional caller d
 
 ## Dependencies and notes
 
-This draft is a feature boundary for planning. #26 owns the provider research and updates only its own research spec. The mentor reviews those findings and product decisions before this Voice spec and its linked issues are marked ready for implementation.
+The completed #26 research is the provider baseline. See the delivery map for the remaining prerequisites.
