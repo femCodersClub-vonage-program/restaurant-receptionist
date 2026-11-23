@@ -4,9 +4,11 @@ This guide covers local developer tools for issue #27, not the application runti
 
 The API key and secret are account-level credentials. The key/secret from your training demo belong to the account you used there; they are not team credentials. A future project account will have its own. Neither tool loads credentials from the project's `.env`; configure each one as described below.
 
+Both tools need Node.js 22 LTS or later ([ADR 005](../adr/005-pin-initial-runtime-and-tooling-versions.md)); `@vonage/auth@1.19.1` declares `"engines": { "node": ">=22" }`, so Node 20 is not supported.
+
 ## 1. Configure the Vonage MCP server
 
-There is no universal MCP config file. Each client keeps its own, but the server entry is identical everywhere; only the location and syntax change.
+There is no universal MCP config file. Each client keeps its own. The server, its two pinned packages, and the environment variables are the same everywhere; only `npx` versus `npx.cmd` and the client's syntax change.
 
 | Client | Personal configuration file | Format |
 | --- | --- | --- |
@@ -20,14 +22,20 @@ Do not add a repository-root `.mcp.json`, `.vscode/mcp.json`, `.codex/config.tom
 
 ### The server entry
 
-All clients start `@vonage/vonage-mcp-server-api-bindings` over stdio. The common entry below uses `npx`; the Codex section shows the Windows form that was verified. Fill in your account key and secret; keep the other values empty.
+The server package, the pinned packages, and the `env` block are the same for every client; only `npx` versus `npx.cmd` and each client's own syntax change. Fill in your account key and secret; keep the other values empty.
 
 ```json
 {
   "vonage-mcp-server-api-bindings": {
     "type": "stdio",
     "command": "npx",
-    "args": ["-y", "@vonage/vonage-mcp-server-api-bindings"],
+    "args": [
+      "--yes",
+      "--package=@vonage/auth@1.19.1",
+      "--package=@vonage/vonage-mcp-server-api-bindings@1.5.1",
+      "--",
+      "vonage-mcp-server-api-bindings"
+    ],
     "env": {
       "VONAGE_APPLICATION_ID": "",
       "VONAGE_PRIVATE_KEY64": "",
@@ -39,6 +47,8 @@ All clients start `@vonage/vonage-mcp-server-api-bindings` over stdio. The commo
   }
 }
 ```
+
+Both packages must be named: the single-package form (`npx -y @vonage/vonage-mcp-server-api-bindings`) ran in Copilot CLI and OpenCode on Windows on 2026-11-16, but failed in Codex Desktop and Claude Code with `ERR_MODULE_NOT_FOUND: Cannot find package auth`. Copilot CLI and OpenCode have not been re-run with this pinned form.
 
 Only the key and secret are needed for the balance check; the other fields remain for tools that may need them later:
 
@@ -55,7 +65,7 @@ Keep the secret only in your personal config. If one is exposed, create a replac
 
 ### GitHub Copilot CLI
 
-`~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`) with a top-level `mcpServers` object. This file is the personal configuration for GitHub Copilot CLI; it is not the configuration for Copilot in VS Code.
+`~/.copilot/mcp-config.json` (Windows: `%USERPROFILE%\.copilot\mcp-config.json`) with a top-level `mcpServers` object. This file is the personal configuration for GitHub Copilot CLI; it is not the configuration for Copilot in VS Code. The Windows check used the single-package form; the pinned form above has not been tried in Copilot CLI.
 
 **Windows PowerShell**
 
@@ -85,7 +95,7 @@ Preserve any other servers already in the file and add the entry above inside `m
 
 1. Select the **Copilot** harness in a chat session.
 2. Run **Chat: Open Customizations**, then select **MCP Servers**.
-3. Select **Add Server**, choose the stdio transport, and enter `npx` with `-y @vonage/vonage-mcp-server-api-bindings`.
+3. Select **Add Server**, choose the stdio transport, and enter `npx` with `--yes --package=@vonage/auth@1.19.1 --package=@vonage/vonage-mcp-server-api-bindings@1.5.1 -- vonage-mcp-server-api-bindings`.
 4. Choose **Global** > **Copilot Global** as the destination.
 
 For VS Code's own (editor-native) MCP setup, follow the official VS Code instructions instead: https://code.visualstudio.com/docs/copilot/chat/mcp-servers. Keep the server entry identical to the one above (same command, args, and env) and store credentials in your personal VS Code configuration, never in a workspace `.vscode/mcp.json` that could reach source control.
@@ -94,17 +104,51 @@ For VS Code's own (editor-native) MCP setup, follow the official VS Code instruc
 
 Use user scope: no `.mcp.json` is created at the repository root, which this project does not allow.
 
-```shell
-claude mcp add --scope user --transport stdio vonage -- npx -y @vonage/vonage-mcp-server-api-bindings
+**Windows PowerShell**
+
+```powershell
+$apiKey = Read-Host "Vonage API key"
+$secure = Read-Host "Vonage API secret" -AsSecureString
+$apiSecret = [System.Net.NetworkCredential]::new("", $secure).Password
+
+claude mcp add -e "VONAGE_API_KEY=$apiKey" -e "VONAGE_API_SECRET=$apiSecret" --scope user --transport stdio vonage -- cmd /c npx --yes --package=@vonage/auth@1.19.1 --package=@vonage/vonage-mcp-server-api-bindings@1.5.1 -- vonage-mcp-server-api-bindings
+
+Remove-Variable apiKey, apiSecret, secure
 ```
 
-That creates the entry without credentials. Add the `env` block above under `mcpServers.vonage` in `~/.claude.json`; `${NAME}` references are expanded there, so you can point at an environment variable instead of pasting the value. Avoid `--env` on the command line unless you accept the secret appearing in your shell history.
+Native Windows needs `cmd /c` in front of `npx` (Claude Code's own MCP documentation). macOS is untested: use the same command without `cmd /c`. `-e` takes several values, so it must not come directly before the server name; another option after the last `-e` separates them. Without it the command fails with `Invalid environment variable format: vonage`.
+
+Values read with `Read-Host` keep the secret out of shell history; a literal `-e "VONAGE_API_SECRET=..."` does not. The entry is stored in the user-level `~/.claude.json`. To avoid passing the secret as an argument at all, add the `env` block above under `mcpServers.vonage` in `~/.claude.json` instead; `${NAME}` references are expanded there.
 
 ```shell
 claude mcp list
 ```
 
 It prints a status per server, such as `Connected` or `Failed to connect`; `claude mcp get vonage` shows the detail.
+
+#### Keep Claude Code read-only
+
+Version 1.5.1 exposes 15 tools. Claude Code has no `enabled_tools` equivalent, and `deny` always wins over `allow`, so the OpenCode pattern does not apply. Deny the tools that send messages, place calls, change the account, or write files, in user-level `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "mcp__vonage__SMS",
+      "mcp__vonage__whatsapp-send-text",
+      "mcp__vonage__whatsapp-send-text-with-sms-failover",
+      "mcp__vonage__rcs-send-text",
+      "mcp__vonage__rcs-send-text-with-sms-failover",
+      "mcp__vonage__outbound-voice-message",
+      "mcp__vonage__create-application",
+      "mcp__vonage__link-number-to-vonage-application",
+      "mcp__vonage__save-chart"
+    ]
+  }
+}
+```
+
+Restart Claude Code and check that the denied tools no longer appear in the agent's tool list; that is how the rules were verified. A malformed rule, such as two names in one string, is accepted silently and matches nothing. The remaining tools ask for permission on each call.
 
 ### Codex
 
@@ -134,7 +178,7 @@ VONAGE_VIRTUAL_NUMBER = ""
 VONAGE_WHATSAPP_NUMBER = ""
 ```
 
-This block was run on Windows in the Codex desktop app; the Codex CLI and macOS were not verified. On macOS use `command = "npx"`; that variant, including whether the pinned packages are needed there, is untested. `startup_timeout_sec = 60` replaces the 10-second default, which is short for a cold `npx` run. `enabled_tools` keeps the exposed set read-only; add the other read-only tools listed under OpenCode if you need them, since only `balance` was exercised through Codex. Use `~/.codex/config.toml`, not a project-scoped `.codex/config.toml`, and keep the file private: it holds the secret.
+This block was run on Windows in the Codex desktop app; the Codex CLI and macOS were not verified. On macOS use `command = "npx"`; that variant is untested. `startup_timeout_sec = 60` replaces the 10-second default, which is short for a cold `npx` run. `enabled_tools` keeps the exposed set read-only; add the other read-only tools listed under OpenCode if you need them, since only `balance` was exercised through Codex. Use `~/.codex/config.toml`, not a project-scoped `.codex/config.toml`, and keep the file private: it holds the secret.
 
 ### OpenCode
 
@@ -147,7 +191,7 @@ Global config at `~/.config/opencode/opencode.json`. OpenCode uses a `command` a
     "servers": {
       "vonage": {
         "type": "local",
-        "command": ["npx", "-y", "@vonage/vonage-mcp-server-api-bindings"],
+        "command": ["npx", "--yes", "--package=@vonage/auth@1.19.1", "--package=@vonage/vonage-mcp-server-api-bindings@1.5.1", "--", "vonage-mcp-server-api-bindings"],
         "environment": {
           "VONAGE_APPLICATION_ID": "",
           "VONAGE_PRIVATE_KEY64": "",
@@ -161,6 +205,8 @@ Global config at `~/.config/opencode/opencode.json`. OpenCode uses a `command` a
   }
 }
 ```
+
+The OpenCode check in the validation status used the single-package form; this pinned form has not been run in OpenCode.
 
 The block below is optional and keeps the agent read-only. Rules are ordered and the last match wins, so a catch-all `deny` plus explicit `allow` rules also deny tools added by a future server version:
 
@@ -249,13 +295,15 @@ If `vonage auth set` reports **Invalid API Key or Secret**, confirm that the key
 
 Issue #27 authorizes read-only balance checks and excludes application or number changes, SMS sends, and calls. None were used and no credit-consuming operation was performed.
 
+`search-available-numbers` only lists numbers available for purchase, so it is read-only as well. `save-chart` writes a file locally and stays out of the read-only set; `make-chart` stays in.
+
 Read-only is the scope of this setup, not of the product: the application will request SMS confirmations through the Messages API after persistence, using its own Vonage Application credentials in the backend rather than these developer tools. RCS and RCS-to-SMS fallback stay outside the MVP.
 
 ## Validation status
 
-- CLI `@vonage/cli@3.3.1` on Windows with Node 22.18.0 and npm 10.9.3: `vonage auth set` and `vonage balance` succeeded with a participant's own account; the `EBADENGINE` warnings did not block them.
-- MCP `@vonage/vonage-mcp-server-api-bindings` `balance` through an AI agent succeeded; do not share the returned balance.
-- Codex desktop app on Windows, with a participant's own account: the `balance` tool call succeeded using the block in section 1.
-- OpenCode `2.3.2` on Windows: `opencode mcp list` reported `connected`, a native `balance` call succeeded, and all five read-only tools stayed reachable with the hyphenated allow rules in section 1. A hyphenated read-only tool (`list-applications`) was invoked successfully without recording its output. Switching those rules to underscores removed `list-applications` and `list-purchased-numbers`, so the guide keeps hyphens for this version (see the note in section 1).
-- The Codex, Claude Code, and VS Code subsections otherwise come from each client's official documentation on 2026-11-19; their CLI commands have not been run, and Codex Desktop was exercised without a separately installed Codex CLI.
-- macOS commands are untested, and an independent second participant has not yet followed the guide.
+- CLI `@vonage/cli@3.3.1` with Node 22.18.0 and npm 10.9.3 on Windows; a second participant (the reviewer) reproduced `vonage auth set` and `vonage balance` with her own account, and the `EBADENGINE` warnings for Prism dependencies did not block them.
+- Copilot CLI on Windows: the `balance` tool call succeeded with the single-package command (2026-11-16); do not share the returned balance.
+- Codex desktop app on Windows: the reviewer's own account, with the pinned two-package command, `balance` succeeded. This is the second-person verification for #27.
+- Claude Code `2.1.330` on native Windows with Node 22.23.5 and npm 10.9.9: the `cmd /c` command with the pinned packages above, `claude mcp list` reported `Connected`, the `balance` call succeeded, and the nine denied tools disappeared from the tool list; output not shared.
+- OpenCode `2.3.2` on Windows, using the single-package command: `opencode mcp list` reported `connected`, a native `balance` call succeeded, and all five read-only tools stayed reachable with the hyphenated allow rules in section 1. A hyphenated read-only tool (`list-applications`) was invoked successfully without recording its output. Switching those rules to underscores removed `list-applications` and `list-purchased-numbers`, so the guide keeps hyphens for this version (see the note in section 1).
+- The VS Code subsection comes from official documentation on 2026-11-19 and has not been run. Codex CLI and macOS are unverified.
