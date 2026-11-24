@@ -41,7 +41,7 @@ class VoicePersistenceIntegrationTests {
 
 	@Test
 	void persistsAndRetrievesActiveVoiceCallSession() {
-		var session = new VoiceCallSession(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+		var session = VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
 		var saved = voiceCallSessionRepository.saveAndFlush(session);
 		var retrieved = voiceCallSessionRepository.findById(saved.getId()).orElseThrow();
@@ -60,7 +60,7 @@ class VoicePersistenceIntegrationTests {
 	@Test
 	void persistsAbandonedSession() {
 		var now = Instant.parse("2027-05-14T13:30:00Z");
-		var session = new VoiceCallSession(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+		var session = VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 		assertThat(session.markAbandoned("caller hung up", DisconnectedBy.CALLER, now)).isTrue();
 
 		var saved = voiceCallSessionRepository.saveAndFlush(session);
@@ -75,7 +75,7 @@ class VoicePersistenceIntegrationTests {
 	@Test
 	void persistsExpiredSession() {
 		var now = Instant.parse("2027-05-14T13:30:00Z");
-		var session = new VoiceCallSession(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+		var session = VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 		assertThat(session.markExpired(now)).isTrue();
 
 		var saved = voiceCallSessionRepository.saveAndFlush(session);
@@ -89,19 +89,20 @@ class VoicePersistenceIntegrationTests {
 
 	@Test
 	void rejectsNullUuid() {
-		var session = new VoiceCallSession(null, UUID.randomUUID().toString());
-
-		assertThatThrownBy(() -> voiceCallSessionRepository.saveAndFlush(session))
+		assertThatThrownBy(() -> jdbcTemplate.update("""
+				INSERT INTO voice_call_sessions (uuid, conversation_uuid, state, current_step)
+				VALUES (NULL, ?, 'ACTIVE', 'INITIAL_GREETING')
+				""", UUID.randomUUID().toString()))
 				.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test
 	void enforcesUniqueUuid() {
 		var uuid = UUID.randomUUID().toString();
-		voiceCallSessionRepository.saveAndFlush(new VoiceCallSession(uuid, UUID.randomUUID().toString()));
+		voiceCallSessionRepository.saveAndFlush(VoiceCallSession.create(uuid, UUID.randomUUID().toString()));
 
 		assertThatThrownBy(() -> voiceCallSessionRepository.saveAndFlush(
-				new VoiceCallSession(uuid, UUID.randomUUID().toString())))
+				VoiceCallSession.create(uuid, UUID.randomUUID().toString())))
 				.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
@@ -116,7 +117,7 @@ class VoicePersistenceIntegrationTests {
 
 	@Test
 	void incrementsVersionOnUpdate() {
-		var session = new VoiceCallSession(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+		var session = VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 		var saved = voiceCallSessionRepository.saveAndFlush(session);
 
 		assertThat(saved.getVersion()).isZero();
