@@ -2,8 +2,8 @@
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
 > Branch (#30): `feature/30-notification-persistence`
-> Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #33 and #34 planned and blocked
-> Last updated: 2026-11-23
+> Status: #30 in progress; mentor-requested changes in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53) (callback before the request outcome). #33 and #34 planned and blocked
+> Last updated: 2026-11-24
 
 ---
 
@@ -19,7 +19,7 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | Done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
+| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | In review in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Planned and blocked; depends on [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26), [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7), [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), verified Messages request contract, and approval of the send/correlation design. |
 | [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
 
@@ -59,6 +59,8 @@ The scope and acceptance criteria in this section describe the published #30 per
 - Use the approved persistence operations from #30 to record a request attempt and its known outcome. Distinguish provider acceptance from recipient delivery.
 - Keep the reservation confirmed if the provider request fails, times out, or has an ambiguous outcome. Record `PENDING` before the request, then `ACCEPTED`, `REQUEST_FAILED` only when the request is known not to have been accepted, or `REQUEST_OUTCOME_UNKNOWN` when the outcome is ambiguous. Do not retry an ambiguous request.
 - Send the notification `id` as `client_ref` (mentor-approved in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53)).
+- Commit `PENDING` in its own transaction before the Messages request, so an early status callback can find it. Make the request outside any database transaction. Then apply the outcome in a new transaction that loads the notification through the row-locking lookup by `id`. Never hold the lock while waiting for Vonage.
+- Record every outcome the entity ignores, in particular a known-not-accepted outcome after a callback. Log only the notification `id` and the failure reason, with no contact number, message content, or provider error body.
 - Define the exact Messages request, authentication, response mapping, and correlation from the completed #26 research before implementation. Manual reservations follow the same approved product policy, but their SMS trigger is later work after the telephone journey and needs reviewed issue scope.
 - Validate with provider test doubles, including accepted, rejected, failed, and ambiguous request outcomes. No automated test may spend credits by default.
 
@@ -66,7 +68,8 @@ The scope and acceptance criteria in this section describe the published #30 per
 
 - Match a callback by `message_uuid`, falling back to `client_ref` (the notification `id`) when no stored `provider_message_id` matches (mentor-approved in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53)). Unknown or ambiguous correlations must not mutate another reservation or notification.
 - Verify callback authentication and required response behaviour from the official contract before implementing an endpoint. Do not assume a signature format, payload, or retry schedule.
-- Apply the approved state transitions idempotently: a repeated callback is a no-op, a callback never regresses a final state, and a callback may resolve `REQUEST_OUTCOME_UNKNOWN` to the corresponding provider state.
+- Apply the approved state transitions idempotently: a repeated callback is a no-op, a callback never regresses a final state, and a callback may resolve `PENDING` or `REQUEST_OUTCOME_UNKNOWN` to the corresponding provider state.
+- Load the notification through the row-locking lookups, by `message_uuid` and then by `client_ref`, in the transaction that applies the status. Log ignored callbacks without sensitive data.
 - Retain only safe status and failure information; do not store raw webhook bodies or sensitive provider errors.
 - Validate authenticated/invalid, duplicate, out-of-order, unknown-correlation, and failure cases with test doubles and PostgreSQL-backed tests where state transitions or constraints are involved.
 
@@ -82,7 +85,7 @@ These later slices are planning boundaries, not approved provider contracts or p
 
 ### Backend
 
-Add a `notifications` package with the `ReservationNotification` entity, the `NotificationStatus` and `NotificationFailureReason` enums, and a repository that looks up a notification by reservation and by provider message identifier. The entity enforces the proposed transitions below. Issue [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) adds no service, controller, scheduler, or Vonage client.
+Add a `notifications` package with the `ReservationNotification` entity, the `NotificationStatus` and `NotificationFailureReason` enums, and a repository that looks up a notification by reservation and by provider message identifier, including row-locking lookups by notification `id` and by provider message identifier. The entity enforces the approved transitions below. Issue [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) adds no service, controller, scheduler, or Vonage client.
 
 ### Frontend
 
@@ -94,7 +97,7 @@ Add the versioned migration described below and recheck its version against `dev
 
 #### Schema
 
-The schema, states, transitions, and correlation in these sections were approved by the mentor in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53) on 2026-11-20.
+The schema, states, transitions, and correlation in these sections were approved by the mentor in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53) on 2026-11-20. Resolving `PENDING` through an early callback, the reconciliation of a late request outcome, and the row locking were approved in the same pull request on 2026-11-24.
 
 Migration: `V2__create_reservation_notifications.sql`. Checked against `develop` and all remote branches on 2026-11-19; no other migration besides `V1__create_reservations.sql` exists.
 
@@ -122,7 +125,7 @@ Structural constraints:
 | --- | --- | --- | --- |
 | `NOT_REQUESTED_CANNOT_RECEIVE` | RN-08 | The customer said the confirmed contact number cannot receive SMS. No request is made. | Yes |
 | `NOT_REQUESTED_CAPABILITY_UNKNOWN` | RN-08 | The customer did not know whether the number can receive SMS. No request is made. | Yes |
-| `PENDING` | Application | Recorded immediately before the Messages request, so that a crash or timeout leaves a trace. | No |
+| `PENDING` | Application | Committed before the Messages request, so that a crash or timeout leaves a trace and an early status callback can find it through `client_ref`. A status callback can resolve it. | No |
 | `REQUEST_FAILED` | Messages request | The request is known not to have been accepted (refused by Vonage, or no connection was established). Requires a `failure_reason`. | Yes |
 | `REQUEST_OUTCOME_UNKNOWN` | Messages request | The outcome is ambiguous (timeout, interrupted response, or server error): Vonage may still have accepted the request. Requires `PROVIDER_OUTCOME_UNKNOWN`. A later status callback can resolve it. | No |
 | `ACCEPTED` | Messages `202 Accepted` | Vonage accepted the request and returned a `message_uuid`. This is not delivery. | No |
@@ -134,9 +137,9 @@ Structural constraints:
 Allowed transitions:
 
 - `PENDING` → `ACCEPTED` (with `provider_message_id`), `REQUEST_FAILED` (with `failure_reason`), or `REQUEST_OUTCOME_UNKNOWN` (with `PROVIDER_OUTCOME_UNKNOWN`).
-- `ACCEPTED` or `REQUEST_OUTCOME_UNKNOWN` → `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
+- `PENDING`, `ACCEPTED`, or `REQUEST_OUTCOME_UNKNOWN` → `SUBMITTED`, `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
 - `SUBMITTED` → `DELIVERED`, `REJECTED`, or `UNDELIVERABLE`.
-- Resolving `REQUEST_OUTCOME_UNKNOWN` stores the callback's `message_uuid` as `provider_message_id` and clears `failure_reason`.
+- Resolving `PENDING` or `REQUEST_OUTCOME_UNKNOWN` through a callback stores the callback's `message_uuid` as `provider_message_id` and clears `failure_reason`.
 - A final state has no outgoing transition. Both no-request states are created directly as final.
 
 Rules for provider status updates (applied by [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)):
@@ -147,12 +150,27 @@ Rules for provider status updates (applied by [#34](https://github.com/femCoders
 - `failure_reason` values: `PROVIDER_REQUEST_REJECTED` (Vonage refused the request), `PROVIDER_UNAVAILABLE` (no connection was established, so the request never left the application), and `PROVIDER_OUTCOME_UNKNOWN` (timeout, interrupted response, or server error; the SMS may or may not have been sent and is not retried as if idempotent). The exact mapping from HTTP outcomes is defined by [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) against the verified contract.
 - These rules are enforced by the notification entity and covered by unit tests in [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30); [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) and [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) call them rather than redefining them.
 
+Reconciling a request outcome that arrives after a callback:
+
+- A status callback can be correlated through `client_ref` before [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) records the outcome of the request. The later outcome never regresses the provider status:
+  - `202 Accepted` with the same `message_uuid` is a no-op.
+  - `202 Accepted` with a different `message_uuid` means inconsistent provider data. It fails explicitly and changes nothing.
+  - An ambiguous outcome, or one classified as known not accepted, is a no-op, and the provider status is kept. A known-not-accepted outcome after a callback is an inconsistency, which #33 records safely: notification `id` and failure reason only, with no contact number, message content, or provider error body.
+- The request-side operations report whether they changed the notification, like provider status updates, so callers can record ignored outcomes.
+
 #### Correlation
 
 - Lookup by reservation: `reservation_id` is unique, so it returns at most one notification.
-- Lookup by provider message: `provider_message_id` is unique and set once Vonage returns `202 Accepted`, or when a callback resolves `REQUEST_OUTCOME_UNKNOWN`, so a status callback matches at most one notification by `message_uuid`.
+- Lookup by provider message: `provider_message_id` is unique and set once Vonage returns `202 Accepted`, or when a callback resolves `PENDING` or `REQUEST_OUTCOME_UNKNOWN`, so a status callback matches at most one notification by `message_uuid`.
 - Fallback by `client_ref`: [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) sends the notification `id` as the Messages `client_ref`, which the documentation says is included in every status callback. When no stored `provider_message_id` matches, [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) looks the notification up by that `id`. No additional column is needed. A callback that matches neither must not modify any notification.
 - The entity stores the reservation identifier as a plain `UUID` without a JPA association; the database foreign key enforces the relationship. This keeps notification code from loading or modifying a `Reservation`.
+
+#### Concurrency
+
+- The request outcome ([#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33)) and a status callback ([#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)) can be processed at the same time for the same notification. Without coordination, the last write wins and could regress a provider status to `ACCEPTED`.
+- The repository provides row-locking lookups (`SELECT ... FOR UPDATE`) by notification `id` and by `provider_message_id`. Like the reservation capacity lock, they require an active transaction.
+- #33 and #34 load the notification through these lookups in the transaction that applies the outcome. The updates are then applied one after the other, and the entity rules make the result independent of their order.
+- The lock is held only while reading and updating the notification, never while waiting for the Messages request.
 
 ### Vonage integration
 
