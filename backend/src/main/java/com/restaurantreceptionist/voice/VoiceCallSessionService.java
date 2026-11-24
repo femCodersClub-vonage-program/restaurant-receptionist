@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -21,15 +20,10 @@ import com.restaurantreceptionist.config.VoiceProperties;
 public class VoiceCallSessionService {
 
 	private static final Logger log = LoggerFactory.getLogger(VoiceCallSessionService.class);
-
 	private static final Set<String> TERMINAL_STATUSES = Set.of("completed", "rejected", "failed");
-
 	private final VoiceCallSessionRepository repository;
-
 	private final Clock clock;
-
 	private final VoiceProperties properties;
-
 	private final VoiceCallSessionService self;
 
 	public VoiceCallSessionService(VoiceCallSessionRepository repository, Clock clock, VoiceProperties properties,
@@ -61,33 +55,31 @@ public class VoiceCallSessionService {
 		if (isErrorWebhook(event)) {
 			return handleErrorWebhook(event);
 		}
-
 		if (event.uuid() == null || event.uuid().isBlank()) {
 			log.warn("Voice event acknowledged without uuid; no state change (status={})", event.status());
 			return new CallEventResult.Acknowledged();
 		}
 
-		Optional<VoiceCallSession> existing = repository.findByUuid(event.uuid());
-		if (existing.isEmpty()) {
-			if (!isTerminal(event)) {
-				if (!isQuietNonTerminal(event.status(), false)) {
-					log.info("Voice event for unknown session acknowledged; no session created (uuid={}, status={})",
-						event.uuid(), event.status());
-				}
-				return new CallEventResult.Acknowledged();
-			}
-			VoiceCallSession tombstoneCall = VoiceCallSession.createAsAbandoned(event.uuid(), event.conversationUuid(),
-				event.reason(), DisconnectedBy.map(event.disconnectedBy()), Instant.now(clock));
-			repository.saveAndFlush(tombstoneCall);
-			log.info("Terminal tombstone persisted for unknown session (uuid={}, status={})", event.uuid(), event.status());
-			return new CallEventResult.Terminated(CallState.ABANDONED);
+		return repository.findByUuid(event.uuid())
+			.map(call -> handleExistingSession(event, call))
+			.orElseGet(() -> handleUnknownSession(event));
+	}
+
+	private CallEventResult handleUnknownSession(CallEvent event) {
+		if (isNonTerminal(event)) {
+			logNonTerminal(event, false, "Voice event for unknown session acknowledged; no session created (uuid={}, status={})");
+			return new CallEventResult.Acknowledged();
 		}
 
-		VoiceCallSession call = existing.get();
-		if (!isTerminal(event)) {
-			if (!isQuietNonTerminal(event.status(), true)) {
-				log.info("Voice event acknowledged with no state change (uuid={}, status={})", event.uuid(), event.status());
-			}
+		VoiceCallSession tombstone = VoiceCallSession.createAsAbandoned(event.uuid(), event.conversationUuid(), event.reason(), DisconnectedBy.map(event.disconnectedBy()), Instant.now(clock));
+		repository.saveAndFlush(tombstone);
+		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={})", event.uuid(), event.status());
+		return new CallEventResult.Terminated(CallState.ABANDONED);
+	}
+
+	private CallEventResult handleExistingSession(CallEvent event, VoiceCallSession call) {
+		if (isNonTerminal(event)) {
+			logNonTerminal(event, true, "Voice event acknowledged with no state change (uuid={}, status={})");
 			return new CallEventResult.Acknowledged();
 		}
 		return terminateActiveSession(event, call);
@@ -98,11 +90,9 @@ public class VoiceCallSessionService {
 		if (event.uuid() == null || event.uuid().isBlank()) {
 			return new CallEventResult.Acknowledged();
 		}
-		Optional<VoiceCallSession> existing = repository.findByUuid(event.uuid());
-		if (existing.isEmpty()) {
-			return new CallEventResult.Acknowledged();
-		}
-		return terminateActiveSession(event, existing.get());
+		return repository.findByUuid(event.uuid())
+			.map(call -> terminateActiveSession(event, call))
+			.orElseGet(() -> new CallEventResult.Acknowledged());
 	}
 
 	private CallEventResult terminateActiveSession(CallEvent event, VoiceCallSession call) {
@@ -144,12 +134,18 @@ public class VoiceCallSessionService {
 		return expired;
 	}
 
-	private static boolean isTerminal(CallEvent event) {
-		return TERMINAL_STATUSES.contains(event.status());
+	private static boolean isNonTerminal(CallEvent event) {
+		return !TERMINAL_STATUSES.contains(event.status());
 	}
 
 	private static boolean isQuietNonTerminal(String status, boolean sessionExists) {
 		return "transfer".equals(status) || ("answered".equals(status) && sessionExists);
+	}
+
+	private static void logNonTerminal(CallEvent event, boolean sessionExists, String format) {
+		if (!isQuietNonTerminal(event.status(), sessionExists)) {
+			log.info(format, event.uuid(), event.status());
+		}
 	}
 
 	private static boolean isErrorWebhook(CallEvent event) {
