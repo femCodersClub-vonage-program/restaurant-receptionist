@@ -2,7 +2,7 @@
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
 > Branch (#30): `feature/30-notification-persistence`
-> Status: #30 in progress; mentor-requested changes in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53) (callback before the request outcome). #33 and #34 planned and blocked
+> Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53) (callback before the request outcome). #33 and #34 planned and blocked
 > Last updated: 2026-11-24
 
 ---
@@ -19,7 +19,7 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | In review in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
+| [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | Done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26) is complete and the schema and state mapping below are mentor-approved. |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Planned and blocked; depends on [#26](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/26), [#7](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/7), [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), verified Messages request contract, and approval of the send/correlation design. |
 | [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Planned and blocked; depends on #26, #30, #33, verified callback contract and authentication, and approved state transitions. |
 
