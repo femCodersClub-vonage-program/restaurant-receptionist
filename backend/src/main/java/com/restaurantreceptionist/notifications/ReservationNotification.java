@@ -66,25 +66,59 @@ public class ReservationNotification {
 		return new ReservationNotification(reservationId, NotificationStatus.PENDING);
 	}
 
-	public void markAccepted(String providerMessageId) {
+	/**
+	 * Records that Vonage accepted the request. A status callback may already have resolved the notification.
+	 *
+	 * @return {@code true} if the notification changed, {@code false} if a callback already recorded the same message
+	 */
+	public boolean markAccepted(String providerMessageId) {
+		var messageId = requireMessageId(providerMessageId);
+
+		if (status.isProviderStatus()) {
+			if (!messageId.equals(this.providerMessageId)) {
+				throw new IllegalStateException("A status callback already recorded a different provider message id");
+			}
+			return false;
+		}
+
 		requireStatus(NotificationStatus.PENDING);
-		this.providerMessageId = requireMessageId(providerMessageId);
+		this.providerMessageId = messageId;
 		this.status = NotificationStatus.ACCEPTED;
+		return true;
 	}
 
-	public void markRequestFailed(NotificationFailureReason reason) {
-		requireStatus(NotificationStatus.PENDING);
-		if (reason != NotificationFailureReason.PROVIDER_REQUEST_REJECTED && reason != NotificationFailureReason.PROVIDER_UNAVAILABLE) {
+	/**
+	 * Records a request that is known not to have been accepted.
+	 *
+	 * @return {@code true} if the notification changed, {@code false} if a status callback already resolved it
+	 */
+	public boolean markRequestFailed(NotificationFailureReason reason) {
+		if (reason != NotificationFailureReason.PROVIDER_REQUEST_REJECTED
+			&& reason != NotificationFailureReason.PROVIDER_UNAVAILABLE) {
 			throw new IllegalArgumentException("A failed request requires a known-not-accepted reason, but was " + reason);
 		}
+		if (status.isProviderStatus()) {
+			return false;
+		}
+		requireStatus(NotificationStatus.PENDING);
 		this.failureReason = reason;
 		this.status = NotificationStatus.REQUEST_FAILED;
+		return true;
 	}
 
-	public void markOutcomeUnknown() {
+	/**
+	 * Records a request whose outcome is ambiguous.
+	 *
+	 * @return {@code true} if the notification changed, {@code false} if a status callback already resolved it
+	 */
+	public boolean markOutcomeUnknown() {
+		if (status.isProviderStatus()) {
+			return false;
+		}
 		requireStatus(NotificationStatus.PENDING);
 		this.failureReason = NotificationFailureReason.PROVIDER_OUTCOME_UNKNOWN;
 		this.status = NotificationStatus.REQUEST_OUTCOME_UNKNOWN;
+		return true;
 	}
 
 	/**
@@ -97,19 +131,15 @@ public class ReservationNotification {
 
 		if (!providerStatus.isProviderStatus()) throw new IllegalArgumentException("providerStatus must be a provider status");
 
-		if (status.isFinal() || status == providerStatus || status == NotificationStatus.PENDING) {
+		if (status.isFinal() || status == providerStatus) {
 			return false;
 		}
 
-		if (status == NotificationStatus.REQUEST_OUTCOME_UNKNOWN) {
+		if (status == NotificationStatus.PENDING || status == NotificationStatus.REQUEST_OUTCOME_UNKNOWN) {
 			this.providerMessageId = requireMessageId(providerMessageId);
 			this.failureReason = null;
-		}
-
-		if (status == NotificationStatus.ACCEPTED || status == NotificationStatus.SUBMITTED) {
-			if (!Objects.equals(this.providerMessageId, providerMessageId)) {
-				return false;
-			}
+		} else if (!Objects.equals(this.providerMessageId, providerMessageId)) {
+			return false;
 		}
 
 		this.status = providerStatus;
