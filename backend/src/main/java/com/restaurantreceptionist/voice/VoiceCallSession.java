@@ -1,16 +1,18 @@
-package com.restaurantreceptionist.voice_call_session;
+package com.restaurantreceptionist.voice;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "voice_call_sessions")
+@EntityListeners(AuditingEntityListener.class)
 public class VoiceCallSession {
 
 	@Id
@@ -29,14 +31,14 @@ public class VoiceCallSession {
 	private CallState state;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "current_step")
+	@Column(name = "current_step", length = 60)
 	private CurrentStep currentStep;
 
-	@CreationTimestamp
+	@CreatedDate
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
-	@UpdateTimestamp
+	@LastModifiedDate
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
@@ -53,21 +55,21 @@ public class VoiceCallSession {
 	@Version
 	private Long version;
 
-	public VoiceCallSession(UUID id, String uuid, String conversationUuid, CallState state, CurrentStep currentStep, Instant createdAt, Instant updatedAt, Instant terminalAt, String endReason, DisconnectedBy disconnectedBy, Long version) {
-		this.id = id;
-		this.uuid = uuid;
-		this.conversationUuid = conversationUuid;
-		this.state = state;
-		this.currentStep = currentStep;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
-		this.terminalAt = terminalAt;
-		this.endReason = endReason;
-		this.disconnectedBy = disconnectedBy;
-		this.version = version;
+	protected VoiceCallSession() {
 	}
 
-	public VoiceCallSession() {
+	public VoiceCallSession(String uuid, String conversationUuid) {
+		this.uuid = uuid;
+		this.conversationUuid = conversationUuid;
+		this.state = CallState.ACTIVE;
+		this.currentStep = CurrentStep.INITIAL_GREETING;
+	}
+
+	public void markAbandoned(String reason, DisconnectedBy disconnectedBy, Instant now) {
+		this.state = CallState.ABANDONED;
+		this.endReason = reason;
+		this.disconnectedBy = disconnectedBy;
+		this.terminalAt = now;
 	}
 
 	public UUID getId() {
