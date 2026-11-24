@@ -32,7 +32,7 @@ public class VoiceCallSession {
 	private CallState state;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "current_step", length = 60)
+	@Column(name = "current_step", length = 64)
 	private CurrentStep currentStep;
 
 	@CreatedDate
@@ -59,11 +59,24 @@ public class VoiceCallSession {
 	protected VoiceCallSession() {
 	}
 
-	public VoiceCallSession(String uuid, String conversationUuid) {
+	public VoiceCallSession(String uuid, String conversationUuid, CallState state, CurrentStep currentStep, String reason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+		Objects.requireNonNull(uuid, "uuid must not be null");
 		this.uuid = uuid;
 		this.conversationUuid = conversationUuid;
-		this.state = CallState.ACTIVE;
-		this.currentStep = CurrentStep.INITIAL_GREETING;
+		this.state = state;
+		this.currentStep = currentStep;
+		this.endReason = reason;
+		this.disconnectedBy = disconnectedBy;
+		this.terminalAt = terminalAt;
+	}
+
+	public static VoiceCallSession create(String uuid, String conversationUuid){
+		return new VoiceCallSession(uuid, conversationUuid, CallState.ACTIVE, CurrentStep.INITIAL_GREETING, null, null, null);
+	}
+
+	public static VoiceCallSession createAsAbandoned(String uuid, String conversationUuid, String reason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+		Objects.requireNonNull(terminalAt, "now must not be null");
+		return new VoiceCallSession(uuid, conversationUuid, CallState.ABANDONED, null, reason, disconnectedBy, terminalAt);
 	}
 
 	public boolean markAbandoned(String reason, DisconnectedBy disconnectedBy, Instant now) {
@@ -88,6 +101,10 @@ public class VoiceCallSession {
 		return true;
 	}
 
+	public boolean isActive() {
+		return this.state == CallState.ACTIVE;
+	}
+
 	public UUID getId() {
 		return id;
 	}
@@ -106,6 +123,10 @@ public class VoiceCallSession {
 
 	public CurrentStep getCurrentStep() {
 		return currentStep;
+	}
+
+	public String getCurrentStepName() {
+		return currentStep.name();
 	}
 
 	public Instant getCreatedAt() {

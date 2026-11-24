@@ -3,7 +3,7 @@ CREATE TABLE voice_call_sessions (
     uuid TEXT UNIQUE NOT NULL,
     conversation_uuid TEXT,
     state VARCHAR(20) NOT NULL,
-    current_step VARCHAR(60),
+    current_step VARCHAR(64),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     terminal_at TIMESTAMP WITH TIME ZONE,
