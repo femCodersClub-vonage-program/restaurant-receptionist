@@ -38,8 +38,7 @@ class ReservationNotificationTests {
 	void marksPendingNotificationAsAccepted() {
 		var notification = ReservationNotification.pending(RESERVATION_ID);
 
-		notification.markAccepted("message-1");
-
+		assertThat(notification.markAccepted("message-1")).isTrue();
 		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.ACCEPTED);
 		assertThat(notification.getProviderMessageId()).isEqualTo("message-1");
 	}
@@ -59,7 +58,7 @@ class ReservationNotificationTests {
 	void marksPendingNotificationAsFailedWhenRequestIsKnownNotAccepted(NotificationFailureReason reason) {
 		var notification = ReservationNotification.pending(RESERVATION_ID);
 
-		notification.markRequestFailed(reason);
+		assertThat(notification.markRequestFailed(reason)).isTrue();
 
 		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.REQUEST_FAILED);
 		assertThat(notification.getFailureReason()).isEqualTo(reason);
@@ -79,8 +78,7 @@ class ReservationNotificationTests {
 	void marksPendingNotificationAsOutcomeUnknown() {
 		var notification = ReservationNotification.pending(RESERVATION_ID);
 
-		notification.markOutcomeUnknown();
-
+		assertThat(notification.markOutcomeUnknown()).isTrue();
 		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.REQUEST_OUTCOME_UNKNOWN);
 		assertThat(notification.getFailureReason()).isEqualTo(NotificationFailureReason.PROVIDER_OUTCOME_UNKNOWN);
 	}
@@ -162,12 +160,80 @@ class ReservationNotificationTests {
 	}
 
 	@Test
-	void ignoresProviderStatusWhilePending() {
+	void resolvesPendingWithEarlyCallback() {
 		var notification = ReservationNotification.pending(RESERVATION_ID);
 
-		assertThat(notification.applyProviderStatus(NotificationStatus.SUBMITTED, "message-1")).isFalse();
+		assertThat(notification.applyProviderStatus(NotificationStatus.DELIVERED, "message-1")).isTrue();
+
+		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.DELIVERED);
+		assertThat(notification.getProviderMessageId()).isEqualTo("message-1");
+		assertThat(notification.getFailureReason()).isNull();
+	}
+
+	@Test
+	void rejectsEarlyCallbackWithoutMessageId() {
+		var notification = ReservationNotification.pending(RESERVATION_ID);
+
+		assertThatThrownBy(() -> notification.applyProviderStatus(NotificationStatus.SUBMITTED, " "))
+			.isInstanceOf(IllegalArgumentException.class);
 		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.PENDING);
 		assertThat(notification.getProviderMessageId()).isNull();
+	}
+
+	@Test
+	void ignoresLateAcceptanceWithSameMessageId() {
+		var notification = resolvedByEarlyCallback(NotificationStatus.DELIVERED);
+
+		assertThat(notification.markAccepted("message-1")).isFalse();
+
+		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.DELIVERED);
+		assertThat(notification.getProviderMessageId()).isEqualTo("message-1");
+	}
+
+	@Test
+	void rejectsLateAcceptanceWithDifferentMessageIdWithoutChangingState() {
+		var notification = resolvedByEarlyCallback(NotificationStatus.SUBMITTED);
+
+		assertThatThrownBy(() -> notification.markAccepted("message-2"))
+			.isInstanceOf(IllegalStateException.class);
+		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.SUBMITTED);
+		assertThat(notification.getProviderMessageId()).isEqualTo("message-1");
+	}
+
+	@Test
+	void ignoresLateFailedOrAmbiguousOutcomeAfterCallback() {
+		var notification = resolvedByEarlyCallback(NotificationStatus.SUBMITTED);
+
+		assertThat(notification.markRequestFailed(NotificationFailureReason.PROVIDER_REQUEST_REJECTED)).isFalse();
+		assertThat(notification.markOutcomeUnknown()).isFalse();
+
+		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.SUBMITTED);
+		assertThat(notification.getProviderMessageId()).isEqualTo("message-1");
+		assertThat(notification.getFailureReason()).isNull();
+	}
+
+	@Test
+	void rejectsInvalidFailureReasonEvenAfterCallback() {
+		var notification = resolvedByEarlyCallback(NotificationStatus.DELIVERED);
+
+		assertThatThrownBy(() -> notification.markRequestFailed(NotificationFailureReason.PROVIDER_OUTCOME_UNKNOWN))
+			.isInstanceOf(IllegalArgumentException.class);
+		assertThat(notification.getStatus()).isEqualTo(NotificationStatus.DELIVERED);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = NotificationStatus.class, names = { "SUBMITTED", "DELIVERED", "REJECTED", "UNDELIVERABLE" })
+	void endsInSameStateWhicheverArrivesFirst(NotificationStatus providerStatus) {
+		var callbackFirst = resolvedByEarlyCallback(providerStatus);
+		callbackFirst.markAccepted("message-1");
+
+		var acceptanceFirst = accepted("message-1");
+		acceptanceFirst.applyProviderStatus(providerStatus, "message-1");
+
+		assertThat(callbackFirst.getStatus()).isEqualTo(providerStatus);
+		assertThat(acceptanceFirst.getStatus()).isEqualTo(providerStatus);
+		assertThat(callbackFirst.getProviderMessageId()).isEqualTo("message-1");
+		assertThat(acceptanceFirst.getProviderMessageId()).isEqualTo("message-1");
 	}
 
 	@ParameterizedTest
@@ -192,6 +258,12 @@ class ReservationNotificationTests {
 	private static ReservationNotification accepted(String messageId) {
 		var notification = ReservationNotification.pending(RESERVATION_ID);
 		notification.markAccepted(messageId);
+		return notification;
+	}
+
+	private static ReservationNotification resolvedByEarlyCallback(NotificationStatus providerStatus) {
+		var notification = ReservationNotification.pending(RESERVATION_ID);
+		notification.applyProviderStatus(providerStatus, "message-1");
 		return notification;
 	}
 }

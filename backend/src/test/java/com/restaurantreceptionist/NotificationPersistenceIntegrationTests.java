@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -80,6 +82,29 @@ class NotificationPersistenceIntegrationTests {
 		assertThat(notificationRepository.findByProviderMessageId(MESSAGE_ID))
 			.hasValueSatisfying(found -> assertThat(found.getId()).isEqualTo(notification.getId()));
 		assertThat(notificationRepository.findByProviderMessageId("unknown-message")).isEmpty();
+	}
+
+	@Test
+	void locksNotificationByIdAndByProviderMessageId() {
+		var reservation = savedReservation();
+		var notification = notificationRepository.saveAndFlush(
+			notificationIn(NotificationStatus.ACCEPTED, reservation.getId()));
+
+		assertThat(notificationRepository.findForUpdateById(notification.getId()))
+			.hasValueSatisfying(found -> assertThat(found.getId()).isEqualTo(notification.getId()));
+		assertThat(notificationRepository.findForUpdateByProviderMessageId(MESSAGE_ID))
+			.hasValueSatisfying(found -> assertThat(found.getId()).isEqualTo(notification.getId()));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	void lockingLookupsRequireAnActiveTransaction() {
+		var unknownId = UUID.fromString("00000000-0000-0000-0000-000000000099");
+
+		assertThatThrownBy(() -> notificationRepository.findForUpdateById(unknownId))
+			.isInstanceOf(IllegalTransactionStateException.class);
+		assertThatThrownBy(() -> notificationRepository.findForUpdateByProviderMessageId(MESSAGE_ID))
+			.isInstanceOf(IllegalTransactionStateException.class);
 	}
 
 	@Test
