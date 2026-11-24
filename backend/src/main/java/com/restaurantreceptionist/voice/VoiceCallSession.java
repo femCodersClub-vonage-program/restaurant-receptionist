@@ -8,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -65,11 +66,26 @@ public class VoiceCallSession {
 		this.currentStep = CurrentStep.INITIAL_GREETING;
 	}
 
-	public void markAbandoned(String reason, DisconnectedBy disconnectedBy, Instant now) {
+	public boolean markAbandoned(String reason, DisconnectedBy disconnectedBy, Instant now) {
+		Objects.requireNonNull(now, "now must not be null");
+		if (state != CallState.ACTIVE) {
+			return false;
+		}
 		this.state = CallState.ABANDONED;
 		this.endReason = reason;
 		this.disconnectedBy = disconnectedBy;
 		this.terminalAt = now;
+		return true;
+	}
+
+	public boolean markExpired(Instant now) {
+		Objects.requireNonNull(now, "now must not be null");
+		if (state != CallState.ACTIVE) {
+			return false;
+		}
+		this.state = CallState.EXPIRED;
+		this.terminalAt = now;
+		return true;
 	}
 
 	public UUID getId() {
