@@ -56,7 +56,7 @@ public class VoiceCallSessionService {
 			return handleErrorWebhook(event);
 		}
 		if (event.uuid() == null || event.uuid().isBlank()) {
-			log.warn("Voice event acknowledged without uuid; no state change (status={})", event.status());
+			log.warn("Voice event acknowledged without uuid; no state change (status={}, timestamp={})", event.status(), event.timestamp());
 			return new CallEventResult.Acknowledged();
 		}
 
@@ -67,42 +67,40 @@ public class VoiceCallSessionService {
 
 	private CallEventResult handleUnknownSession(CallEvent event) {
 		if (isNonTerminal(event)) {
-			logNonTerminal(event, false, "Voice event for unknown session acknowledged; no session created (uuid={}, status={})");
+			logNonTerminal(event, false, "Voice event for unknown session acknowledged; no session created (uuid={}, status={}, timestamp={})");
 			return new CallEventResult.Acknowledged();
 		}
 
-		VoiceCallSession tombstone = VoiceCallSession.createAsAbandoned(event.uuid(), event.conversationUuid(), event.reason(), DisconnectedBy.map(event.disconnectedBy()), Instant.now(clock));
+		Instant terminalAt = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
+		VoiceCallSession tombstone = VoiceCallSession.createAsAbandoned(event.uuid(), event.conversationUuid(), event.detail(), DisconnectedBy.map(event.disconnectedBy()), terminalAt);
 		repository.saveAndFlush(tombstone);
-		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={})", event.uuid(), event.status());
+		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={}, timestamp={}, detail={})", event.uuid(), event.status(), event.timestamp(), event.detail());
 		return new CallEventResult.Terminated(CallState.ABANDONED);
 	}
 
 	private CallEventResult handleExistingSession(CallEvent event, VoiceCallSession call) {
 		if (isNonTerminal(event)) {
-			logNonTerminal(event, true, "Voice event acknowledged with no state change (uuid={}, status={})");
+			logNonTerminal(event, true, "Voice event acknowledged with no state change (uuid={}, status={}, timestamp={})");
 			return new CallEventResult.Acknowledged();
 		}
 		return terminateActiveSession(event, call);
 	}
 
 	private CallEventResult handleErrorWebhook(CallEvent event) {
-		log.warn("Provider error webhook received (reason={})", event.reason());
-		if (event.uuid() == null || event.uuid().isBlank()) {
-			return new CallEventResult.Acknowledged();
-		}
-		return repository.findByUuid(event.uuid())
-			.map(call -> terminateActiveSession(event, call))
-			.orElseGet(() -> new CallEventResult.Acknowledged());
+		log.warn("Provider error webhook received (reason={}, conversationUuid={}, timestamp={})", event.reason(),
+			event.conversationUuid(), event.timestamp());
+		return new CallEventResult.Acknowledged();
 	}
 
 	private CallEventResult terminateActiveSession(CallEvent event, VoiceCallSession call) {
 		try {
-			boolean applied = call.markAbandoned(event.reason(), DisconnectedBy.map(event.disconnectedBy()), Instant.now(clock));
+			Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
+			boolean applied = call.markAbandoned(event.detail(), DisconnectedBy.map(event.disconnectedBy()), now);
 			if (!applied) {
 				return new CallEventResult.Acknowledged();
 			}
 			repository.flush();
-			log.info("Call session marked abandoned (uuid={})", event.uuid());
+			log.info("Call session marked abandoned (uuid={}, timestamp={}, detail={})", event.uuid(), event.timestamp(), event.detail());
 			return new CallEventResult.Terminated(call.getState());
 		} catch (OptimisticLockingFailureException exception) {
 			return self.reevaluateTerminal(event);
@@ -115,7 +113,8 @@ public class VoiceCallSessionService {
 		if (call == null || !call.isActive()) {
 			return new CallEventResult.Acknowledged();
 		}
-		boolean applied = call.markAbandoned(event.reason(), DisconnectedBy.map(event.disconnectedBy()), Instant.now(clock));
+		Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
+		boolean applied = call.markAbandoned(event.detail(), DisconnectedBy.map(event.disconnectedBy()), now);
 		return applied
 			? new CallEventResult.Terminated(call.getState())
 			: new CallEventResult.Acknowledged();
@@ -144,7 +143,7 @@ public class VoiceCallSessionService {
 
 	private static void logNonTerminal(CallEvent event, boolean sessionExists, String format) {
 		if (!isQuietNonTerminal(event.status(), sessionExists)) {
-			log.info(format, event.uuid(), event.status());
+			log.info(format, event.uuid(), event.status(), event.timestamp());
 		}
 	}
 
