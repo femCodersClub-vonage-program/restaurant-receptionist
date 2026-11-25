@@ -7,6 +7,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -59,13 +60,13 @@ public class VoiceCallSession {
 	protected VoiceCallSession() {
 	}
 
-	public VoiceCallSession(String uuid, String conversationUuid, CallState state, CurrentStep currentStep, String reason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+	public VoiceCallSession(String uuid, String conversationUuid, CallState state, CurrentStep currentStep, String endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
 		Objects.requireNonNull(uuid, "uuid must not be null");
 		this.uuid = uuid;
 		this.conversationUuid = conversationUuid;
 		this.state = state;
 		this.currentStep = currentStep;
-		this.endReason = reason;
+		this.endReason = endReason;
 		this.disconnectedBy = disconnectedBy;
 		this.terminalAt = terminalAt;
 	}
@@ -74,18 +75,18 @@ public class VoiceCallSession {
 		return new VoiceCallSession(uuid, conversationUuid, CallState.ACTIVE, CurrentStep.INITIAL_GREETING, null, null, null);
 	}
 
-	public static VoiceCallSession createAsAbandoned(String uuid, String conversationUuid, String reason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+	public static VoiceCallSession createAsAbandoned(String uuid, String conversationUuid, String endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
 		Objects.requireNonNull(terminalAt, "now must not be null");
-		return new VoiceCallSession(uuid, conversationUuid, CallState.ABANDONED, null, reason, disconnectedBy, terminalAt);
+		return new VoiceCallSession(uuid, conversationUuid, CallState.ABANDONED, null, endReason, disconnectedBy, terminalAt);
 	}
 
-	public boolean markAbandoned(String reason, DisconnectedBy disconnectedBy, Instant now) {
+	public boolean markAbandoned(String endReason, DisconnectedBy disconnectedBy, Instant now) {
 		Objects.requireNonNull(now, "now must not be null");
 		if (state != CallState.ACTIVE) {
 			return false;
 		}
 		this.state = CallState.ABANDONED;
-		this.endReason = reason;
+		this.endReason = endReason;
 		this.disconnectedBy = disconnectedBy;
 		this.terminalAt = now;
 		return true;
