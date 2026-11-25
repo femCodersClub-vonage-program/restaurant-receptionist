@@ -128,6 +128,17 @@ class NotificationStatusCallbackIntegrationTests {
 	}
 
 	@Test
+	void leavesNotificationUnchangedWhenClientRefIsAnotherValidButMissingNotification() {
+		var matchedId = committedNotification(notification -> notification.markAccepted(MESSAGE_ID));
+		var missingNotificationId = "00000000-0000-0000-0000-00000000ffff";
+
+		var outcome = apply(MESSAGE_ID, NotificationStatus.DELIVERED, missingNotificationId);
+
+		assertThat(outcome).isEqualTo(StatusCallbackOutcome.AMBIGUOUS_CORRELATION);
+		assertStored(matchedId, NotificationStatus.ACCEPTED, MESSAGE_ID);
+	}
+
+	@Test
 	void repeatedCallbackIsIgnoredWithoutWriting() {
 		var notificationId = committedNotification(notification -> notification.markAccepted(MESSAGE_ID));
 		assertThat(apply(MESSAGE_ID, NotificationStatus.SUBMITTED, null)).isEqualTo(StatusCallbackOutcome.APPLIED);
