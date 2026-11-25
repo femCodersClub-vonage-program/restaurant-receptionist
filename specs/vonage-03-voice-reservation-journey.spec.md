@@ -113,6 +113,7 @@ Return a short `es-ES` greeting and omit `bargeIn`:
 #### Signature verification
 
 - Apply the shared verifier from #56 to both routes. #35 uses a test double with the same contract and replaces it with the real verifier before closure. The verifier owns JWT-library choice and claim parsing.
+- The test double is a permissive verifier (`SignatureVerification.Verified`) that lives only in the test sources (`TestcontainersConfiguration`); the controller slice test uses `@MockitoBean`. `main` has no `SignatureVerifier` bean, so the application does not start outside tests until #56 supplies the real verifier. This is intended fail-closed behaviour, not a regression.
 - A missing signature (no `Authorization` header, no `Bearer` scheme, or no JWT) returns `503` so Vonage can attempt a signed retry; session state is unchanged.
 - An invalid signature (HMAC mismatch, unsupported `alg`/`typ`, wrong `iss`, or `application_id` mismatch when the claim is present) returns `401`; session state is unchanged.
 - The documented rare unsigned callback is treated as a missing signature: return `503`, do not process it, and allow the retry.

@@ -62,25 +62,45 @@ class VoiceCallSessionServiceTests {
 	}
 
 	@Test
-	void errorWebhookMarksExistingActiveSessionAbandoned() {
+	void errorWebhookIsAcknowledgedWithoutStateChange() {
+		var service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT), null);
+
+		var result = service.handleEvent(new CallEvent(null, "conversation-uuid", null, null, "ncco error", null, NOW));
+
+		assertThat(result).isEqualTo(new CallEventResult.Acknowledged());
+		verifyNoInteractions(repository);
+	}
+
+	@Test
+	void terminalEventUsesEventTimestampForTerminalAt() {
 		var service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT), null);
 		var session = VoiceCallSession.create("call-leg-uuid", null);
 		when(repository.findByUuid("call-leg-uuid")).thenReturn(Optional.of(session));
 
-		var result = service.handleEvent(new CallEvent("call-leg-uuid", null, null, null, "ncco error"));
+		var eventTime = Instant.parse("2027-05-14T13:00:00Z");
+		service.handleEvent(new CallEvent("call-leg-uuid", null, "completed", "user", "caller hung up", null, eventTime));
 
-		assertThat(result).isInstanceOfSatisfying(CallEventResult.Terminated.class,
-			terminated -> assertThat(terminated.state()).isEqualTo(CallState.ABANDONED));
 		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
-		assertThat(session.getEndReason()).isEqualTo("ncco error");
-		assertThat(session.getTerminalAt()).isEqualTo(NOW);
+		assertThat(session.getTerminalAt()).isEqualTo(eventTime);
+	}
+
+	@Test
+	void rejectedEventUsesDetailAsEndReason() {
+		var service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT), null);
+		var session = VoiceCallSession.create("call-leg-uuid", null);
+		when(repository.findByUuid("call-leg-uuid")).thenReturn(Optional.of(session));
+
+		service.handleEvent(new CallEvent("call-leg-uuid", null, "rejected", null, null, "declined", null));
+
+		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
+		assertThat(session.getEndReason()).isEqualTo("declined");
 	}
 
 	@Test
 	void errorWebhookWithoutUuidIsAcknowledgedWithoutStateChange() {
 		var service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT), null);
 
-		var result = service.handleEvent(new CallEvent(null, null, null, null, "ncco error"));
+		var result = service.handleEvent(new CallEvent(null, null, null, null, "ncco error", null, null));
 
 		assertThat(result).isEqualTo(new CallEventResult.Acknowledged());
 		verifyNoInteractions(repository);
