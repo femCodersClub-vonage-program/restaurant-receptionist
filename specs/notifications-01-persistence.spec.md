@@ -2,8 +2,9 @@
 
 > Related issues: [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30), [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33), [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34)
 > Branch (#30): `feature/30-notification-persistence`
-> Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #33 and #34 depend on #30
-> Last updated: 2026-11-24
+> Branch (#34): `feature/34-messages-status-callbacks`
+> Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #34 in progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58); #33 pending
+> Last updated: 2026-11-25
 
 ---
 
@@ -22,7 +23,7 @@ Build the journey in bounded slices: persist notification state, request an elig
 | [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Messages status callbacks. | #34 can use a verifier double during development and must integrate the real verifier before closure. |
 | [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | Done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53), following the [state and schema review](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53#issuecomment-7035156930). |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Start after #30 merges and the remaining request contract and status mapping are approved. Send the notification UUID as `client_ref`. |
-| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Start after #30 merges and remaining callback details are approved. Use stored fixtures to work in parallel with #33. Integrate #56 before closure; verify the combined send-to-status journey in #38. |
+| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Callback contract approved on 2026-11-25; see [Approved status callback contract (#34)](#approved-status-callback-contract-34). In progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58) against a verifier double. Use stored fixtures to work in parallel with #33. Integrate #56 before closure; verify the combined send-to-status journey in #38. |
 
 Each issue links back to this spec. The later slices do not expand #30.
 
@@ -67,7 +68,7 @@ The scope and acceptance criteria in this section describe the published #30 per
 ### Delivery-status callbacks
 
 - Match the callback's `message_uuid` to `provider_message_id` first. If no row matches, use `client_ref` to look up the notification UUID. Unknown or ambiguous matches must leave all records unchanged.
-- Verify callback authentication and required response behaviour from the official contract before implementing an endpoint. Do not assume a signature format, payload, or retry schedule.
+- Verify callback authentication and required response behaviour from the official contract before implementing an endpoint. Do not assume a signature format, payload, or retry schedule. The approved contract is recorded in [Approved status callback contract (#34)](#approved-status-callback-contract-34).
 - Apply the approved state transitions idempotently: a repeated callback is a no-op, a callback never regresses a final state, and a callback may resolve `PENDING` or `REQUEST_OUTCOME_UNKNOWN` to the corresponding provider state.
 - Load the notification through the row-locking lookups, by `message_uuid` and then by `client_ref`, in the transaction that applies the status. Log ignored callbacks without sensitive data.
 - Retain only safe status and failure information; do not store raw webhook bodies or sensitive provider errors.
@@ -75,11 +76,48 @@ The scope and acceptance criteria in this section describe the published #30 per
 
 These later slices are planning boundaries, not approved provider contracts or permission to implement. The linked issues record approved decisions, remaining contract details and integration requirements.
 
+### Approved status callback contract (#34)
+
+The mentor approved this contract on 2026-11-25 in [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34#issuecomment-7161729420), following the [contract proposal](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34#issuecomment-7140432038). The state rules, correlation order and row locking above are unchanged.
+
+Endpoint: `POST /api/webhooks/vonage/messages/status`, handled by its own controller in the `notifications` package.
+
+Each request goes through these steps in order. A failed step ends the request:
+
+1. Verify the signature with the shared verifier from [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) before parsing the body. The verifier receives the raw body.
+2. Read only `message_uuid`, `status`, `channel` and `client_ref`. Ignore every other field, including `to`, `from`, `usage` and `error`.
+3. `message_uuid`, `status` and `channel` are required and must be non-blank JSON strings. `client_ref` is optional, but when present it must be a JSON string. `channel` is treated as required because the Messages status reference marks it as required.
+4. Only a callback whose `channel` is `sms` can update a notification.
+5. Map `status` exactly: `submitted` → `SUBMITTED`, `delivered` → `DELIVERED`, `rejected` → `REJECTED`, `undeliverable` → `UNDELIVERABLE`.
+6. Apply the status through the callback service, using the correlation and locking rules above.
+7. Respond only after the transaction commits. The controller is not transactional and `spring.jpa.open-in-view` is disabled, so the service transaction commits before the response is built.
+
+| Situation | Response | Notification change |
+| --- | --- | --- |
+| Missing signature | `503`, so that Vonage retries | None |
+| Invalid signature | `401` | None |
+| Malformed JSON; a required field is missing, blank or not a string; `client_ref` is not a string | `400` | None |
+| Well-formed callback for a channel other than `sms` | `200`, empty body | None |
+| Unsupported `status` value | `200`, empty body | None |
+| Unknown or ambiguous correlation | `200`, empty body | None |
+| Duplicate, out-of-order or final-state callback | `200`, empty body | None |
+| Status applied | `200`, empty body, after the transaction commits | Status updated |
+| Unexpected error, including a failed commit | `500`, so that Vonage retries | None (rolled back) |
+
+Additional rules:
+
+- **Ambiguous correlation.** If `message_uuid` matches a notification and `client_ref` is a valid notification UUID that identifies a different one, the callback is ignored. This applies even when no notification exists with that UUID. A `client_ref` that is missing or is not a canonical UUID is not used for correlation.
+- **Exact matching.** `channel` and `status` are matched exactly and are case-sensitive, as documented.
+- **Retries.** Vonage retries every non-2xx response, including `400`.
+- **Provider errors.** The callback `error` object is neither stored nor logged. Storing provider error codes requires a separate issue and migration.
+- **Logging.** Logs contain only the notification `id`, the mapped status and the outcome. Ignored channels and unsupported statuses are logged with fixed labels (`NON_SMS_CHANNEL`, `UNSUPPORTED_STATUS`), never with the received value. Logs never contain `to`, `from`, `message_uuid`, `client_ref`, the request body or the token.
+- **Known limitation.** A callback without `client_ref` that arrives while another transaction is resolving the same `PENDING` notification ends as unknown correlation, because its `message_uuid` is not committed yet. [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) always sends `client_ref`, and the documentation says it is included in every status callback.
+
 ## Business rules and decisions
 
 - Business rules: [RN-06](../docs/business-rules.md#rn-06-confirmation-messages) and [RN-08](../docs/business-rules.md#rn-08-contact-phone-and-sms-eligibility).
 - Related ADRs: [ADR-004](../docs/adr/004-adopt-flyway-migration-coordination-policy.md).
-- Confirm the remaining send and callback contract details in #33 and #34 using the approved correlation rule above. Manual SMS triggering requires separately reviewed scope.
+- Confirm the remaining send contract details in #33 using the approved correlation rule above. The #34 callback contract is approved; see [Approved status callback contract (#34)](#approved-status-callback-contract-34). Manual SMS triggering requires separately reviewed scope.
 
 ## Technical design
 
