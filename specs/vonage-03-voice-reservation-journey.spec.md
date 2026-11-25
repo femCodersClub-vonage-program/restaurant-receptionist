@@ -2,7 +2,7 @@
 
 > Related issues: [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35), [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36), [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37)
 > Status: #35 entry, routes, greeting, and PostgreSQL session design approved; implementation in progress. #36 and #37 remain planned.
-> Last updated: 2026-11-23
+> Last updated: 2026-11-25
 
 ---
 
@@ -124,11 +124,11 @@ Return a short `es-ES` greeting and omit `bargeIn`:
 | --- | --- |
 | `started`, `ringing` | Acknowledge and log; no session change. |
 | `answered` | If a session exists, confirm it; otherwise acknowledge and log without creating one. The `answer` webhook is authoritative for creation. |
-| `completed` | Mark an active session terminal as `ABANDONED` unless #37 has already set `COMPLETED`; record `end_reason` and `disconnected_by` as diagnostics. If no session exists, persist a minimal terminal tombstone so a delayed `answer` cannot open an active session. |
-| `rejected`, `failed` | Same terminal handling. If `uuid` is absent (documented for `rejected`), acknowledge and log only. |
+| `completed` | Mark an active session terminal as `ABANDONED` unless #37 has already set `COMPLETED`; record `disconnected_by` as a diagnostic. If no session exists, persist a minimal terminal tombstone so a delayed `answer` cannot open an active session. |
+| `rejected`, `failed` | Same terminal handling. Record the `detail` diagnostic (`invalid_number`, `restricted`, `declined`, `throttled`, `cannot_route`, `number_out_of_service`, `internal_error`) as `end_reason`. If `uuid` is absent (documented for `rejected`), acknowledge and log only. |
 | `input` | Not in #35; implemented in #36. |
 | `transfer` | Acknowledge; not applicable. |
-| Error webhook (`reason`) | Log safely as a provider error; do not count it as a caller attempt and do not create a reservation. Mark terminal only if the call cannot continue. |
+| Error webhook (`reason`) | Log safely as a provider error; do not count it as a caller attempt and do not create a reservation. Acknowledge and log only — an error webhook reports a provider-side error and does not signal that the call has ended. |
 | Other documented statuses (`busy`, `cancelled`, `unanswered`, `reconnecting`, `reconnected`, `timeout`, `record`, `human`/`machine`) | Acknowledge and log; mutate state only through a terminal event above. |
 
 #### State transitions and idempotency
@@ -192,7 +192,7 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
 | `terminal_at` | `TIMESTAMPTZ` | Nullable; set on terminal transition. |
-| `end_reason` | `TEXT` | Nullable; safe diagnostic only. |
+| `end_reason` | `TEXT` | Nullable; safe diagnostic only. Holds `detail` for `rejected`/`failed`; null for `completed`. |
 | `disconnected_by` | `VARCHAR(20)` | Nullable; diagnostic only. |
 | `version` | `BIGINT` | `NOT NULL DEFAULT 0` for optimistic locking. |
 
