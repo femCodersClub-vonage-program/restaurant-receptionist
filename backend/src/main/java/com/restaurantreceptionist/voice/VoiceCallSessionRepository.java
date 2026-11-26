@@ -23,4 +23,14 @@ public interface VoiceCallSessionRepository extends JpaRepository<VoiceCallSessi
 		ON CONFLICT (uuid) DO NOTHING
 		""", nativeQuery = true)
 	int insertIfAbsent(@Param("uuid") String uuid, @Param("conversationUuid") String conversationUuid, String state, String currentStep);
+
+	@Modifying
+	@Query(value = """
+		INSERT INTO voice_call_sessions (uuid, conversation_uuid, state, end_reason, disconnected_by, terminal_at)
+		VALUES (:uuid, :conversationUuid, 'ABANDONED', :endReason, :disconnectedBy, :terminalAt)
+		ON CONFLICT (uuid) DO NOTHING
+		""", nativeQuery = true)
+	int insertTerminalIfAbsent(@Param("uuid") String uuid, @Param("conversationUuid") String conversationUuid,
+		@Param("endReason") String endReason, @Param("disconnectedBy") String disconnectedBy,
+		@Param("terminalAt") Instant terminalAt);
 }
