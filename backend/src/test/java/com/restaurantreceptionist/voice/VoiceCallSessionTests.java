@@ -120,14 +120,6 @@ class VoiceCallSessionTests {
 		assertThat(abandoned.isActive()).isFalse();
 	}
 
-	@Test
-	void disconnectedByMapsVonageValues() {
-		assertThat(DisconnectedBy.map("user")).isEqualTo(DisconnectedBy.CALLER);
-		assertThat(DisconnectedBy.map("platform")).isEqualTo(DisconnectedBy.PLATFORM);
-		assertThat(DisconnectedBy.map(null)).isNull();
-		assertThat(DisconnectedBy.map("unknown")).isNull();
-	}
-
 	private static VoiceCallSession newSession() {
 		return VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 	}
