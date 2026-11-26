@@ -1,6 +1,7 @@
 package com.restaurantreceptionist.webhooks;
 
 import com.auth0.jwt.algorithms.Algorithm;
+import com.vonage.client.voice.VoiceClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -18,6 +19,7 @@ import static com.restaurantreceptionist.webhooks.WebhookSignatureVerification.I
 import static com.restaurantreceptionist.webhooks.WebhookSignatureVerification.MISSING_SIGNATURE;
 import static com.restaurantreceptionist.webhooks.WebhookSignatureVerification.VERIFIED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mockStatic;
 
 class VonageWebhookSignatureVerifierTests {
 	private static final String BODY = "{ \"label\": \"men\u00fa\" }\n";
@@ -51,6 +53,19 @@ class VonageWebhookSignatureVerifierTests {
 	@ValueSource(strings = {"Basic abc", "Bearer", "Bearer ", "Bearer not-a-jwt", "Bearer abc.def.ghi"})
 	void rejectsMalformedAuthorization(String header) {
 		assertThat(verifier.verify(header, BODY)).isEqualTo(INVALID_SIGNATURE);
+	}
+
+	@Test
+	void rejectsSignatureWhenSdkCannotReadTheJwtHeader() {
+		String header = authorizationFor(BODY);
+		String token = header.substring("Bearer ".length());
+		try (var sdk = mockStatic(VoiceClient.class)) {
+			sdk.when(() -> VoiceClient.verifySignature(token, SIGNATURE_SECRET))
+				.thenThrow(new NullPointerException("Missing JWT header"));
+
+			assertThat(verifier.verify(header, BODY)).isEqualTo(INVALID_SIGNATURE);
+			sdk.verify(() -> VoiceClient.verifySignature(token, SIGNATURE_SECRET));
+		}
 	}
 
 	@Test

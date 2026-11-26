@@ -44,7 +44,12 @@ final class VonageWebhookSignatureVerifier implements WebhookSignatureVerifier {
 
 		String token = bearer.group(1);
 		// The SDK helper verifies the same HS256 JWT format used by Voice and Messages.
-		if (!VoiceClient.verifySignature(token, signatureSecret)) {
+		try {
+			if (!VoiceClient.verifySignature(token, signatureSecret)) {
+				return INVALID_SIGNATURE;
+			}
+		} catch (NullPointerException malformedToken) {
+			// The SDK can dereference a null header while reading a malformed JWT.
 			return INVALID_SIGNATURE;
 		}
 
