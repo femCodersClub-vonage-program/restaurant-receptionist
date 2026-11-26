@@ -72,9 +72,19 @@ public class VoiceCallSessionService {
 		}
 
 		Instant terminalAt = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
-		VoiceCallSession tombstone = VoiceCallSession.createAsAbandoned(event.uuid(), event.conversationUuid(), event.detail(), DisconnectedBy.map(event.disconnectedBy()), terminalAt);
-		repository.saveAndFlush(tombstone);
-		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={}, timestamp={}, detail={})", event.uuid(), event.status(), event.timestamp(), event.detail());
+		DisconnectedBy disconnectedBy = DisconnectedBy.map(event.disconnectedBy());
+		int inserted = repository.insertTerminalIfAbsent(event.uuid(), event.conversationUuid(), event.detail(),
+			disconnectedBy != null ? disconnectedBy.name() : null, terminalAt);
+
+		if (inserted == 0) {
+			VoiceCallSession call = repository.findByUuid(event.uuid()).orElse(null);
+			return call != null && call.isActive()
+				? terminateActiveSession(event, call)
+				: new CallEventResult.Acknowledged();
+		}
+
+		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={}, timestamp={}, detail={})",
+			event.uuid(), event.status(), event.timestamp(), event.detail());
 		return new CallEventResult.Terminated(CallState.ABANDONED);
 	}
 
@@ -129,6 +139,9 @@ public class VoiceCallSessionService {
 			if (session.markExpired(Instant.now(clock))) {
 				expired++;
 			}
+		}
+		if (expired > 0) {
+			log.info("Expired {} stale voice call session(s)", expired);
 		}
 		return expired;
 	}
