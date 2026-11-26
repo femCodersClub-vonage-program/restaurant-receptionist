@@ -4,7 +4,7 @@
 > Branch (#30): `feature/30-notification-persistence`
 > Branch (#34): `feature/34-messages-status-callbacks`
 > Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #34 in progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58); #33 pending
-> Last updated: 2026-11-26 
+> Last updated: 2026-11-26
 
 ---
 
@@ -20,10 +20,10 @@ Build the journey in bounded slices: persist notification state, request an elig
 
 | Issue | Deliverable | Readiness and dependencies |
 | --- | --- | --- |
-| [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Messages status callbacks. | #34 can use a verifier double during development and must integrate the real verifier before closure. |
+| [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) | Provide the shared signature verifier for incoming Vonage Messages status callbacks. | Done in [PR #59](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/59); see [ADR-008](../docs/adr/008-verify-signed-vonage-webhooks.md). |
 | [#30](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/30) | Persist notification state, both no-request reasons, and correlation data. | Done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53), following the [state and schema review](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53#issuecomment-7035156930). |
 | [#33](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/33) | Request one confirmation SMS after an eligible telephone reservation is confirmed and record the provider outcome. Eligibility and no-request handling need issue review before implementation; manual triggering remains later work. | Start after #30 merges and the remaining request contract and status mapping are approved. Send the notification UUID as `client_ref`. |
-| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Callback contract approved on 2026-11-25; see [Approved status callback contract (#34)](#approved-status-callback-contract-34). In progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58) against a verifier double. Use stored fixtures to work in parallel with #33. Integrate #56 before closure; verify the combined send-to-status journey in #38. |
+| [#34](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/34) | Accept verified Messages status events and update the matching notification idempotently. | Callback contract approved on 2026-11-25; see [Approved status callback contract (#34)](#approved-status-callback-contract-34). In progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58), integrated with the shared verifier from #56. Use stored fixtures to work in parallel with #33. Verify the combined send-to-status journey in #38. |
 
 Each issue links back to this spec. The later slices do not expand #30.
 
@@ -84,7 +84,7 @@ Endpoint: `POST /api/webhooks/vonage/messages/status`, handled by its own contro
 
 Each request goes through these steps in order. A failed step ends the request:
 
-1. Verify the signature with the shared verifier from [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) before parsing the body. The verifier receives the raw body.
+1. Verify the signature with the shared `WebhookSignatureVerifier` from [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56) before parsing the body. The verifier receives the `Authorization` header, or `null` when it is absent, and the raw body, or an empty string when there is no body.
 2. Read only `message_uuid`, `status`, `channel` and `client_ref`. Ignore every other field, including `to`, `from`, `usage` and `error`.
 3. `message_uuid`, `status` and `channel` are required and must be non-blank JSON strings. `client_ref` is optional, but when present it must be a JSON string. `channel` is treated as required because the Messages status reference marks it as required.
 4. Only a callback whose `channel` is `sms` can update a notification.
@@ -106,7 +106,7 @@ Each request goes through these steps in order. A failed step ends the request:
 
 Additional rules:
 
-- **Provisional verifier.** Until #56 is merged, #34 uses a provisional `MessagesSignatureVerifier` in the `notifications` package. It has the same `Verified`, `Missing` and `Invalid` outcomes as the Voice double in [PR #57](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/57) and receives the `Authorization` header and the raw body. Its default implementation is fail-closed: it treats every request as unsigned, so the endpoint returns `503`. Tests replace it with a double. The real verifier from #56 must replace it before #34 closes.
+- **Shared verifier.** The endpoint uses the verifier delivered by #56 ([ADR-008](../docs/adr/008-verify-signed-vonage-webhooks.md)). Real signature verification runs only when it is enabled in the configuration. Otherwise the verifier fails closed and treats every request as unsigned, so the endpoint returns `503`, even for a validly signed callback. Controller tests replace the verifier with a double. Integration tests enable real verification with locally signed fictional fixtures and cover an applied update and a body that differs from the signed one (`401`, no change).
 - **Ambiguous correlation.** If `message_uuid` matches a notification and `client_ref` is a valid notification UUID that identifies a different one, the callback is ignored. This applies even when no notification exists with that UUID. A `client_ref` that is missing or is not a canonical UUID is not used for correlation.
 - **Exact matching.** `channel` and `status` are matched exactly and are case-sensitive, as documented.
 - **Retries.** Vonage retries every non-2xx response, including `400`.
@@ -117,7 +117,7 @@ Additional rules:
 ## Business rules and decisions
 
 - Business rules: [RN-06](../docs/business-rules.md#rn-06-confirmation-messages) and [RN-08](../docs/business-rules.md#rn-08-contact-phone-and-sms-eligibility).
-- Related ADRs: [ADR-004](../docs/adr/004-adopt-flyway-migration-coordination-policy.md).
+- Related ADRs: [ADR-004](../docs/adr/004-adopt-flyway-migration-coordination-policy.md), [ADR-008](../docs/adr/008-verify-signed-vonage-webhooks.md).
 - Confirm the remaining send contract details in #33 using the approved correlation rule above. The #34 callback contract is approved; see [Approved status callback contract (#34)](#approved-status-callback-contract-34). Manual SMS triggering requires separately reviewed scope.
 
 ## Technical design
