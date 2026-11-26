@@ -8,6 +8,7 @@ import com.vonage.client.voice.VoiceClient;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.DateTimeException;
 import java.util.HexFormat;
 import java.util.regex.Pattern;
 
@@ -48,8 +49,8 @@ final class VonageWebhookSignatureVerifier implements WebhookSignatureVerifier {
 			if (!VoiceClient.verifySignature(token, signatureSecret)) {
 				return INVALID_SIGNATURE;
 			}
-		} catch (NullPointerException malformedToken) {
-			// The SDK can dereference a null header while reading a malformed JWT.
+		} catch (NullPointerException | DateTimeException malformedToken) {
+			// The SDK can throw while reading a null header or an out-of-range timestamp.
 			return INVALID_SIGNATURE;
 		}
 

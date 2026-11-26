@@ -92,6 +92,15 @@ class VonageWebhookSignatureVerifierTests {
 		assertThat(verifier.verify(header, BODY)).isEqualTo(INVALID_SIGNATURE);
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {"iat", "nbf", "exp"})
+	void rejectsTimestampsOutsideInstantRange(String claim) {
+		for (long epochSecond : new long[] {Instant.MIN.getEpochSecond() - 1, Instant.MAX.getEpochSecond() + 1}) {
+			String header = authorization(tokenBuilder().withClaim(claim, epochSecond));
+			assertThat(verifier.verify(header, BODY)).as("%s=%d", claim, epochSecond).isEqualTo(INVALID_SIGNATURE);
+		}
+	}
+
 	@Test
 	void rejectsOtherOrMissingAccount() {
 		assertThat(verifier.verify(authorization(tokenBuilder().withClaim("api_key", "another-fictional-account")), BODY))
