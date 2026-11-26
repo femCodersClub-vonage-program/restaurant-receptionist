@@ -1,0 +1,12 @@
+{
+  "message_uuid": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+  "to": "447700900000",
+  "from": "FictionalBistro",
+  "timestamp": "2027-05-14T11:00:00.000Z",
+  "status": "delivered",
+  "channel": "sms",
+  "client_ref": "00000000-0000-0000-0000-000000000001",
+  "usage": { "currency": "EUR", "price":  "0.0333" },
+  "destination": { "network_code": "12345" },
+  "sms": { "count_total":  "1" }
+}
