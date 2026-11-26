@@ -11,8 +11,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.restaurantreceptionist.webhooks.VonageWebhookFixtures;
+
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest
+@SpringBootTest(properties = "vonage.webhooks.enabled=false")
 @AutoConfigureMockMvc
 class MessagesStatusWebhookFailClosedIntegrationTests {
 
@@ -20,13 +23,15 @@ class MessagesStatusWebhookFailClosedIntegrationTests {
 	private MockMvc mockMvc;
 
 	@Test
-	void rejectsEveryCallbackUntilTheRealVerifierIsAvailable() throws Exception {
+	void rejectsEvenValidlySignedCallbacksWhileVerificationIsDisabled() throws Exception {
+		var body = """
+			{"message_uuid":"fictional-message-1","status":"delivered","channel":"sms"}
+			""";
+
 		mockMvc.perform(post("/api/webhooks/vonage/messages/status")
-			.header(HttpHeaders.AUTHORIZATION, "Bearer fictional-token")
+			.header(HttpHeaders.AUTHORIZATION, VonageWebhookFixtures.authorizationFor(body))
 			.contentType(MediaType.APPLICATION_JSON)
-			.content("""
-				{"message_uuid":"fictional-message-1","status":"delivered","channel":"sms"}
-				"""))
+			.content(body))
 			.andExpect(status().isServiceUnavailable());
 	}
 }

@@ -18,20 +18,27 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.restaurantreceptionist.notifications.ReservationNotification;
 import com.restaurantreceptionist.notifications.ReservationNotificationRepository;
-import com.restaurantreceptionist.notifications.VerifiedMessagesSignatureTestConfiguration;
 import com.restaurantreceptionist.reservations.DiningSession;
 import com.restaurantreceptionist.reservations.Reservation;
 import com.restaurantreceptionist.reservations.ReservationRepository;
+import com.restaurantreceptionist.webhooks.VonageWebhookFixtures;
 
-@Import({ TestcontainersConfiguration.class, VerifiedMessagesSignatureTestConfiguration.class })
-@SpringBootTest
+@Import(TestcontainersConfiguration.class)
+@SpringBootTest(properties = {
+	"vonage.webhooks.enabled=true",
+	"vonage.webhooks.api-key=" + VonageWebhookFixtures.API_KEY,
+	"vonage.webhooks.signature-secret=" + VonageWebhookFixtures.SIGNATURE_SECRET,
+	"vonage.webhooks.application-id=" + VonageWebhookFixtures.APPLICATION_ID })
 @AutoConfigureMockMvc
 class MessagesStatusWebhookIntegrationTests {
+
+	private static final String URL = "/api/webhooks/vonage/messages/status";
 
 	private static final String MESSAGE_ID = "fictional-message-1";
 
@@ -61,20 +68,42 @@ class MessagesStatusWebhookIntegrationTests {
 	}
 
 	@Test
-	void appliedStatusIsCommittedBeforeTheOkResponse() throws Exception {
+	void signedStatusIsCommittedBeforeTheOkResponse() throws Exception {
 		var notificationId = committedAcceptedNotification();
+		var body = callback(notificationId, "delivered");
 
-		mockMvc.perform(post("/api/webhooks/vonage/messages/status")
-			.header(HttpHeaders.AUTHORIZATION, "Bearer fictional-token")
+		send(body, VonageWebhookFixtures.authorizationFor(body)).andExpect(status().isOk());
+
+		assertThat(storedStatus(notificationId)).isEqualTo("DELIVERED");
+	}
+
+	@Test
+	void callbackWhoseBodyDiffersFromTheSignedOneIsRejectedWithoutChanges() throws Exception {
+		var notificationId = committedAcceptedNotification();
+		var signedBody = callback(notificationId, "delivered");
+
+		send(callback(notificationId, "rejected"), VonageWebhookFixtures.authorizationFor(signedBody))
+			.andExpect(status().isUnauthorized());
+
+		assertThat(storedStatus(notificationId)).isEqualTo("ACCEPTED");
+	}
+
+	private ResultActions send(String body, String authorization) throws Exception {
+		return mockMvc.perform(post(URL)
+			.header(HttpHeaders.AUTHORIZATION, authorization)
 			.contentType(MediaType.APPLICATION_JSON)
-			.content("""
-				{"message_uuid":"%s","status":"delivered","channel":"sms","client_ref":"%s"}
-				""".formatted(MESSAGE_ID, notificationId)))
-			.andExpect(status().isOk());
+			.content(body));
+	}
 
-		assertThat(jdbcTemplate.queryForObject(
-			"SELECT status FROM reservation_notifications WHERE id = ?", String.class, notificationId))
-			.isEqualTo("DELIVERED");
+	private static String callback(UUID notificationId, String status) {
+		return """
+			{"message_uuid":"%s","status":"%s","channel":"sms","client_ref":"%s"}
+			""".formatted(MESSAGE_ID, status, notificationId);
+	}
+
+	private String storedStatus(UUID notificationId) {
+		return jdbcTemplate.queryForObject(
+			"SELECT status FROM reservation_notifications WHERE id = ?", String.class, notificationId);
 	}
 
 	private UUID committedAcceptedNotification() {

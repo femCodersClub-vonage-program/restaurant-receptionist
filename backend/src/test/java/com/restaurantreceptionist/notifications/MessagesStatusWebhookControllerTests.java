@@ -25,6 +25,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerification;
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerifier;
+
 @WebMvcTest(MessagesStatusWebhookController.class)
 class MessagesStatusWebhookControllerTests {
 
@@ -40,14 +43,14 @@ class MessagesStatusWebhookControllerTests {
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private MessagesSignatureVerifier signatureVerifier;
+	private WebhookSignatureVerifier signatureVerifier;
 
 	@MockitoBean
 	private NotificationStatusCallbackService callbackService;
 
 	@BeforeEach
 	void verifiedByDefault() {
-		when(signatureVerifier.verify(any(), any())).thenReturn(new MessagesSignatureVerification.Verified());
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.VERIFIED);
 	}
 
 	@Test
@@ -65,7 +68,7 @@ class MessagesStatusWebhookControllerTests {
 
 	@Test
 	void rejectsMissingSignatureBeforeReadingTheBody() throws Exception {
-		when(signatureVerifier.verify(any(), any())).thenReturn(new MessagesSignatureVerification.Missing());
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.MISSING_SIGNATURE);
 
 		send("not json").andExpect(status().isServiceUnavailable());
 
@@ -74,7 +77,7 @@ class MessagesStatusWebhookControllerTests {
 
 	@Test
 	void rejectsInvalidSignatureBeforeReadingTheBody() throws Exception {
-		when(signatureVerifier.verify(any(), any())).thenReturn(new MessagesSignatureVerification.Invalid());
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.INVALID_SIGNATURE);
 
 		send("not json").andExpect(status().isUnauthorized());
 
@@ -82,12 +85,12 @@ class MessagesStatusWebhookControllerTests {
 	}
 
 	@Test
-	void passesAbsentHeaderAndBodyToTheVerifierAsNull() throws Exception {
-		when(signatureVerifier.verify(any(), any())).thenReturn(new MessagesSignatureVerification.Missing());
+	void passesAbsentHeaderAsNullAndAbsentBodyAsEmptyString() throws Exception {
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.MISSING_SIGNATURE);
 
 		mockMvc.perform(post(URL)).andExpect(status().isServiceUnavailable());
 
-		verify(signatureVerifier).verify(null, null);
+		verify(signatureVerifier).verify(null, "");
 	}
 
 	@ParameterizedTest

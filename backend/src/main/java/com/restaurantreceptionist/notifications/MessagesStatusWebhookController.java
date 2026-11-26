@@ -1,6 +1,7 @@
 package com.restaurantreceptionist.notifications;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -15,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerification;
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerifier;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,14 +39,14 @@ class MessagesStatusWebhookController {
 
 	private static final String SMS_CHANNEL = "sms";
 
-	private final MessagesSignatureVerifier signatureVerifier;
+	private final WebhookSignatureVerifier signatureVerifier;
 
 	private final NotificationStatusCallbackService callbackService;
 
 	private final JsonMapper jsonMapper;
 
 	MessagesStatusWebhookController(
-		MessagesSignatureVerifier signatureVerifier,
+		WebhookSignatureVerifier signatureVerifier,
 		NotificationStatusCallbackService callbackService,
 		JsonMapper jsonMapper) {
 		this.signatureVerifier = signatureVerifier;
@@ -66,12 +70,14 @@ class MessagesStatusWebhookController {
 		@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
 		@RequestBody(required = false) String rawBody) {
 
-		Optional<ResponseEntity<Void>> rejected = rejected(signatureVerifier.verify(authorization, rawBody));
+		String body = Objects.requireNonNullElse(rawBody, "");
+
+		Optional<ResponseEntity<Void>> rejected = rejected(signatureVerifier.verify(authorization, body));
 		if (rejected.isPresent()) {
 			return rejected.get();
 		}
 
-		Optional<MessagesStatusRequest> request = parse(rawBody);
+		Optional<MessagesStatusRequest> request = parse(body);
 		if (request.isEmpty() || !hasRequiredFields(request.get())) {
 			return malformed();
 		}
@@ -98,18 +104,16 @@ class MessagesStatusWebhookController {
 		return ResponseEntity.internalServerError().build();
 	}
 
-	private static Optional<ResponseEntity<Void>> rejected(MessagesSignatureVerification verification) {
+	private static Optional<ResponseEntity<Void>> rejected(WebhookSignatureVerification verification) {
 		return switch (verification) {
-			case MessagesSignatureVerification.Missing ignored ->
-				Optional.of(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
-			case MessagesSignatureVerification.Invalid ignored ->
-				Optional.of(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
-			case MessagesSignatureVerification.Verified ignored -> Optional.empty();
+			case MISSING_SIGNATURE -> Optional.of(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+			case INVALID_SIGNATURE -> Optional.of(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+			case VERIFIED -> Optional.empty();
 		};
 	}
 
 	private Optional<MessagesStatusRequest> parse(String rawBody) {
-		if (rawBody == null || rawBody.isBlank()) {
+		if (rawBody.isBlank()) {
 			return Optional.empty();
 		}
 		try {
