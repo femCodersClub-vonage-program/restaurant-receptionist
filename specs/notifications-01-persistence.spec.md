@@ -4,7 +4,7 @@
 > Branch (#30): `feature/30-notification-persistence`
 > Branch (#34): `feature/34-messages-status-callbacks`
 > Status: #30 done in [PR #53](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/53); #34 in progress in [PR #58](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/58); #33 pending
-> Last updated: 2026-11-25
+> Last updated: 2026-11-26 
 
 ---
 
@@ -106,6 +106,7 @@ Each request goes through these steps in order. A failed step ends the request:
 
 Additional rules:
 
+- **Provisional verifier.** Until #56 is merged, #34 uses a provisional `MessagesSignatureVerifier` in the `notifications` package. It has the same `Verified`, `Missing` and `Invalid` outcomes as the Voice double in [PR #57](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/pull/57) and receives the `Authorization` header and the raw body. Its default implementation is fail-closed: it treats every request as unsigned, so the endpoint returns `503`. Tests replace it with a double. The real verifier from #56 must replace it before #34 closes.
 - **Ambiguous correlation.** If `message_uuid` matches a notification and `client_ref` is a valid notification UUID that identifies a different one, the callback is ignored. This applies even when no notification exists with that UUID. A `client_ref` that is missing or is not a canonical UUID is not used for correlation.
 - **Exact matching.** `channel` and `status` are matched exactly and are case-sensitive, as documented.
 - **Retries.** Vonage retries every non-2xx response, including `400`.
