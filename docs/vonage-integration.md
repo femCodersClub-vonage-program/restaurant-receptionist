@@ -26,6 +26,8 @@ The MVP uses Messages API to request an SMS reservation confirmation after the r
 
 ## Inbound webhook verification
 
+See [ADR-008](adr/008-verify-signed-vonage-webhooks.md) for the verification and SDK decision.
+
 The shared `com.restaurantreceptionist.webhooks.WebhookSignatureVerifier` verifies incoming Voice and Messages callbacks. The Vonage Java Server SDK checks the HS256 JWT signature using the account's signature secret. The backend checks the signed `api_key` and `iss` claims and compares `application_id` with the configured application when the claim is present. When `payload_hash` is present, the backend compares it with the SHA-256 digest of the original UTF-8 body. See the [Vonage signed webhook reference](https://developer.vonage.com/en/getting-started/concepts/webhooks#decoding-signed-webhooks).
 
 Set these variables in the receiving backend's environment. See the [local setup guide](setup.md) for loading a local ignored `.env` file.
