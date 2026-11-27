@@ -21,12 +21,20 @@ import com.restaurantreceptionist.voice.AnswerResult.Opened;
 import com.restaurantreceptionist.web.ProblemDetails;
 import com.restaurantreceptionist.webhooks.WebhookSignatureVerifier;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/api/webhooks/vonage/voice")
 public class VoiceCallSessionController {
+
+	private static final String PROBLEM_JSON = "application/problem+json";
 
 	private final VoiceCallSessionService voiceCallSessionService;
 
@@ -42,6 +50,18 @@ public class VoiceCallSessionController {
 	}
 
 	@PostMapping(value = "/answer", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Receive a Vonage Voice answer webhook")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Greeting NCCO for a new or repeated active session"),
+		@ApiResponse(responseCode = "204", description = "Answer on a terminal session; the call is not reopened"),
+		@ApiResponse(
+			responseCode = "400",
+			description = "Missing or blank uuid, or an unreadable body",
+			content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+		@ApiResponse(responseCode = "401", description = "Invalid signature"),
+		@ApiResponse(responseCode = "503", description = "Missing signature; Vonage may retry"),
+		@ApiResponse(responseCode = "500", description = "Unexpected error; Vonage may retry")
+	})
 	public ResponseEntity<?> answer(
 			@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
 			@RequestBody(required = false) String rawBody) {
@@ -62,6 +82,17 @@ public class VoiceCallSessionController {
 	}
 
 	@PostMapping(value = "/event", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@Operation(summary = "Receive a Vonage Voice event webhook")
+	@ApiResponses({
+		@ApiResponse(responseCode = "204", description = "Event acknowledged, whether applied or ignored"),
+		@ApiResponse(
+			responseCode = "400",
+			description = "Unreadable event payload",
+			content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+		@ApiResponse(responseCode = "401", description = "Invalid signature"),
+		@ApiResponse(responseCode = "503", description = "Missing signature; Vonage may retry"),
+		@ApiResponse(responseCode = "500", description = "Unexpected error; Vonage may retry")
+	})
 	public ResponseEntity<?> event(
 			@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
 			@RequestBody(required = false) String rawBody) {
