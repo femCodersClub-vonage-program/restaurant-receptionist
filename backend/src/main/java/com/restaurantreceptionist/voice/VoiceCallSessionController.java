@@ -1,10 +1,10 @@
 package com.restaurantreceptionist.voice;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.servlet.http.HttpServletRequest;
-
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -12,12 +12,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.restaurantreceptionist.voice.AnswerResult.AlreadyTerminal;
 import com.restaurantreceptionist.voice.AnswerResult.Opened;
 import com.restaurantreceptionist.web.ProblemDetails;
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerifier;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/api/webhooks/vonage/voice")
@@ -25,21 +30,28 @@ public class VoiceCallSessionController {
 
 	private final VoiceCallSessionService voiceCallSessionService;
 
-	private final SignatureVerifier signatureVerifier;
+	private final WebhookSignatureVerifier signatureVerifier;
+
+	private final JsonMapper jsonMapper;
 
 	public VoiceCallSessionController(VoiceCallSessionService voiceCallSessionService,
-			SignatureVerifier signatureVerifier) {
+			WebhookSignatureVerifier signatureVerifier, JsonMapper jsonMapper) {
 		this.voiceCallSessionService = voiceCallSessionService;
 		this.signatureVerifier = signatureVerifier;
+		this.jsonMapper = jsonMapper;
 	}
 
 	@PostMapping(value = "/answer", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> answer(@RequestBody AnswerRequest request, HttpServletRequest httpRequest) {
-		Optional<ResponseEntity<Void>> rejected = rejected(httpRequest);
+	public ResponseEntity<?> answer(
+			@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+			@RequestBody(required = false) String rawBody) {
+		Optional<ResponseEntity<Void>> rejected = rejected(authorization, rawBody);
 		if (rejected.isPresent()) {
 			return rejected.get();
 		}
-		if (request.uuid() == null || request.uuid().isBlank()) {
+
+		AnswerRequest request = parse(rawBody, AnswerRequest.class);
+		if (request == null || request.uuid() == null || request.uuid().isBlank()) {
 			return malformed("uuid", "MISSING");
 		}
 
@@ -50,11 +62,20 @@ public class VoiceCallSessionController {
 	}
 
 	@PostMapping(value = "/event", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> event(@RequestBody CallEvent event, HttpServletRequest httpRequest) {
-		Optional<ResponseEntity<Void>> rejected = rejected(httpRequest);
+	public ResponseEntity<?> event(
+			@RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+			@RequestBody(required = false) String rawBody) {
+		Optional<ResponseEntity<Void>> rejected = rejected(authorization, rawBody);
 		if (rejected.isPresent()) {
 			return rejected.get();
 		}
+
+		CallEvent event = parse(rawBody, CallEvent.class);
+		if (event == null) {
+			return ResponseEntity.badRequest().body(
+				ProblemDetails.forStatusAndDetail(HttpStatus.BAD_REQUEST, "The event webhook is not readable."));
+		}
+
 		voiceCallSessionService.handleEvent(event);
 		return ResponseEntity.noContent().build();
 	}
@@ -66,14 +87,24 @@ public class VoiceCallSessionController {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
 	}
 
-	private Optional<ResponseEntity<Void>> rejected(HttpServletRequest request) {
-		return switch (signatureVerifier.verify(request)) {
-			case SignatureVerification.Missing ignored ->
-				Optional.of(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
-			case SignatureVerification.Invalid ignored ->
-				Optional.of(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
-			case SignatureVerification.Verified ignored -> Optional.empty();
+	private Optional<ResponseEntity<Void>> rejected(String authorization, String rawBody) {
+		String body = Objects.requireNonNullElse(rawBody, "");
+		return switch (signatureVerifier.verify(authorization, body)) {
+			case MISSING_SIGNATURE -> Optional.of(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
+			case INVALID_SIGNATURE -> Optional.of(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+			case VERIFIED -> Optional.empty();
 		};
+	}
+
+	private <T> T parse(String rawBody, Class<T> type) {
+		if (rawBody == null || rawBody.isBlank()) {
+			return null;
+		}
+		try {
+			return jsonMapper.readValue(rawBody, type);
+		} catch (JacksonException exception) {
+			return null;
+		}
 	}
 
 	private static ResponseEntity<ProblemDetail> malformed(String field, String reason) {
