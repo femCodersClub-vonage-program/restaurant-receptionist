@@ -1,4 +1,9 @@
 package com.restaurantreceptionist.voice;
 
-public record AnswerRequest(String uuid, String conversationUuid) {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record AnswerRequest(
+	String uuid,
+	@JsonProperty("conversation_uuid") String conversationUuid
+) {
 }

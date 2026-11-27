@@ -73,4 +73,34 @@ class VoiceCallSessionControllerIntegrationTests {
 
 		assertThat(repository.findByUuid(uuid).orElseThrow().getState()).isEqualTo(CallState.ABANDONED);
 	}
+
+	@Test
+	void answerPersistsConversationUuid() throws Exception {
+		var uuid = UUID.randomUUID().toString();
+
+		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"uuid\":\"" + uuid + "\",\"conversation_uuid\":\"conversation-123\"}"))
+			.andExpect(status().isOk());
+
+		assertThat(repository.findByUuid(uuid).orElseThrow().getConversationUuid()).isEqualTo("conversation-123");
+	}
+
+	@Test
+	void completedEventPersistsDisconnectedBy() throws Exception {
+		var uuid = UUID.randomUUID().toString();
+		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"uuid\":\"" + uuid + "\"}"))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"uuid\":\"" + uuid + "\",\"status\":\"completed\",\"disconnected_by\":\"user\"}"))
+			.andExpect(status().isNoContent());
+
+		var stored = repository.findByUuid(uuid).orElseThrow();
+		assertThat(stored.getState()).isEqualTo(CallState.ABANDONED);
+		assertThat(stored.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
+	}
 }

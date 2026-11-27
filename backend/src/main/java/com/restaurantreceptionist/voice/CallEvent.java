@@ -2,11 +2,13 @@ package com.restaurantreceptionist.voice;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record CallEvent(
 	String uuid,
-	String conversationUuid,
+	@JsonProperty("conversation_uuid") String conversationUuid,
 	String status,
-	String disconnectedBy,
+	@JsonProperty("disconnected_by") String disconnectedBy,
 	String reason,
 	String detail,
 	Instant timestamp
