@@ -93,6 +93,12 @@ class VoiceCallSessionControllerIntegrationTests {
 		assertThat(stored.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
 	}
 
+	@Test
+	void eventWithNeitherStatusNorReasonIsAcknowledged() throws Exception {
+		send("/api/webhooks/vonage/voice/event", "{\"uuid\":\"call-leg-uuid\"}")
+			.andExpect(status().isNoContent());
+	}
+
 	private ResultActions send(String url, String body) throws Exception {
 		return mockMvc.perform(post(url)
 			.header(HttpHeaders.AUTHORIZATION, VonageWebhookFixtures.authorizationFor(body))

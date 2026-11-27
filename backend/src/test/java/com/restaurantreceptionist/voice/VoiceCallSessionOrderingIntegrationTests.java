@@ -2,6 +2,7 @@ package com.restaurantreceptionist.voice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.restaurantreceptionist.TestcontainersConfiguration;
 
@@ -25,6 +27,9 @@ class VoiceCallSessionOrderingIntegrationTests {
 
 	@Autowired
 	private VoiceCallSessionRepository voiceCallSessionRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Test
 	void completedBeforeAnswerPersistsTombstoneAndDoesNotOpenActiveSession() {
@@ -77,6 +82,73 @@ class VoiceCallSessionOrderingIntegrationTests {
 
 		assertThat(voiceCallSessionRepository.findByUuid(uuid).orElseThrow().getState())
 			.isEqualTo(CallState.ABANDONED);
+	}
+
+	@Test
+	void twoSimultaneousAnswersCreateOnlyOneSession() throws Exception {
+		var uuid = UUID.randomUUID().toString();
+		var start = new CountDownLatch(1);
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+
+		try {
+			Future<AnswerResult> first = executor.submit(() -> {
+				await(start);
+				return voiceCallSessionService.answer(uuid, null);
+			});
+			Future<AnswerResult> second = executor.submit(() -> {
+				await(start);
+				return voiceCallSessionService.answer(uuid, null);
+			});
+
+			start.countDown();
+			assertThat(first.get(10, TimeUnit.SECONDS)).isInstanceOf(AnswerResult.Opened.class);
+			assertThat(second.get(10, TimeUnit.SECONDS)).isInstanceOf(AnswerResult.Opened.class);
+		} finally {
+			executor.shutdownNow();
+		}
+
+		Integer count = jdbcTemplate.queryForObject(
+			"SELECT count(*) FROM voice_call_sessions WHERE uuid = ?", Integer.class, uuid);
+		assertThat(count).isEqualTo(1);
+		assertThat(voiceCallSessionRepository.findByUuid(uuid).orElseThrow().getState())
+			.isEqualTo(CallState.ACTIVE);
+	}
+
+	@Test
+	void twoCompletedEventsTerminateSameSessionExactlyOnce() throws Exception {
+		var uuid = UUID.randomUUID().toString();
+		voiceCallSessionService.answer(uuid, null);
+
+		var start = new CountDownLatch(1);
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+
+		try {
+			Future<CallEventResult> first = executor.submit(() -> {
+				await(start);
+				return voiceCallSessionService.handleEvent(completed(uuid));
+			});
+			Future<CallEventResult> second = executor.submit(() -> {
+				await(start);
+				return voiceCallSessionService.handleEvent(completed(uuid));
+			});
+
+			start.countDown();
+			CallEventResult firstResult = first.get(10, TimeUnit.SECONDS);
+			CallEventResult secondResult = second.get(10, TimeUnit.SECONDS);
+
+			assertThat(List.of(isTerminated(firstResult), isTerminated(secondResult)))
+				.containsExactlyInAnyOrder(true, false);
+		} finally {
+			executor.shutdownNow();
+		}
+
+		var stored = voiceCallSessionRepository.findByUuid(uuid).orElseThrow();
+		assertThat(stored.getState()).isEqualTo(CallState.ABANDONED);
+		assertThat(stored.getVersion()).isEqualTo(1L);
+	}
+
+	private static boolean isTerminated(CallEventResult result) {
+		return result instanceof CallEventResult.Terminated;
 	}
 
 	private static CallEvent completed(String uuid) {
