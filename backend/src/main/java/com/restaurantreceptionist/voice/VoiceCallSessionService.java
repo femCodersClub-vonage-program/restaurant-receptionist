@@ -81,6 +81,48 @@ public class VoiceCallSessionService {
 			.orElseGet(() -> handleUnknownSession(event));
 	}
 
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public CallEventResult reevaluateTerminal(CallEvent event) {
+		VoiceCallSession call = repository.findByUuid(event.uuid()).orElse(null);
+		if (call == null || !call.isActive()) {
+			return new CallEventResult.Acknowledged();
+		}
+		Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
+		boolean applied = call.markAbandoned(EndReason.fromDetail(event.detail()), DisconnectedBy.map(event.disconnectedBy()), now);
+		return applied
+			? new CallEventResult.Terminated(call.getState())
+			: new CallEventResult.Acknowledged();
+	}
+
+	@Transactional
+	public int expireStaleSessions() {
+		Instant cutoff = Instant.now(clock).minus(properties.inactivityTimeout());
+		List<VoiceCallSession> stale = repository.findAllByStateAndUpdatedAtBefore(CallState.ACTIVE, cutoff);
+		int expired = 0;
+		for (VoiceCallSession session : stale) {
+			if (session.markExpired(Instant.now(clock))) {
+				expired++;
+			}
+		}
+		if (expired > 0) {
+			log.info("Expired {} stale voice call session(s)", expired);
+		}
+		return expired;
+	}
+
+	@Transactional
+	public int cleanupTerminalSessions() {
+		Instant cutoff = Instant.now(clock).minus(properties.retentionPeriod());
+		List<VoiceCallSession> terminal = repository.findAllByTerminalAtBefore(cutoff,
+			PageRequest.of(0, properties.cleanupBatchSize()));
+		if (terminal.isEmpty()) {
+			return 0;
+		}
+		repository.deleteAllInBatch(terminal);
+		log.info("Deleted {} voice call session(s) older than the retention period", terminal.size());
+		return terminal.size();
+	}
+
 	private CallEventResult handleUnknownSession(CallEvent event) {
 		if (isNonTerminal(event)) {
 			logNonTerminal(event, false, "Voice event for unknown session acknowledged; no session created (uuid={}, status={}, timestamp={})");
@@ -129,48 +171,6 @@ public class VoiceCallSessionService {
 		repository.flush();
 		log.info("Call session marked abandoned (uuid={}, timestamp={}, endReason={})", event.uuid(), event.timestamp(), call.getEndReason());
 		return new CallEventResult.Terminated(call.getState());
-	}
-
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public CallEventResult reevaluateTerminal(CallEvent event) {
-		VoiceCallSession call = repository.findByUuid(event.uuid()).orElse(null);
-		if (call == null || !call.isActive()) {
-			return new CallEventResult.Acknowledged();
-		}
-		Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
-		boolean applied = call.markAbandoned(EndReason.fromDetail(event.detail()), DisconnectedBy.map(event.disconnectedBy()), now);
-		return applied
-			? new CallEventResult.Terminated(call.getState())
-			: new CallEventResult.Acknowledged();
-	}
-
-	@Transactional
-	public int expireStaleSessions() {
-		Instant cutoff = Instant.now(clock).minus(properties.inactivityTimeout());
-		List<VoiceCallSession> stale = repository.findAllByStateAndUpdatedAtBefore(CallState.ACTIVE, cutoff);
-		int expired = 0;
-		for (VoiceCallSession session : stale) {
-			if (session.markExpired(Instant.now(clock))) {
-				expired++;
-			}
-		}
-		if (expired > 0) {
-			log.info("Expired {} stale voice call session(s)", expired);
-		}
-		return expired;
-	}
-
-	@Transactional
-	public int cleanupTerminalSessions() {
-		Instant cutoff = Instant.now(clock).minus(properties.retentionPeriod());
-		List<VoiceCallSession> terminal = repository.findAllByTerminalAtBefore(cutoff,
-			PageRequest.of(0, properties.cleanupBatchSize()));
-		if (terminal.isEmpty()) {
-			return 0;
-		}
-		repository.deleteAllInBatch(terminal);
-		log.info("Deleted {} voice call session(s) older than the retention period", terminal.size());
-		return terminal.size();
 	}
 
 	private static boolean isNonTerminal(CallEvent event) {
