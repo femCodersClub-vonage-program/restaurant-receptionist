@@ -16,4 +16,9 @@ public class VoiceCallSessionExpiryScheduler {
 	public void expireStaleSessions() {
 		voiceCallSessionService.expireStaleSessions();
 	}
+
+	@Scheduled(fixedDelayString = "${voice.cleanup-scan-interval:PT1H}")
+	public void cleanupTerminalSessions() {
+		voiceCallSessionService.cleanupTerminalSessions();
+	}
 }
