@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,8 @@ public interface VoiceCallSessionRepository extends JpaRepository<VoiceCallSessi
 	Optional<VoiceCallSession> findByUuid(String uuid);
 
 	List<VoiceCallSession> findAllByStateAndUpdatedAtBefore(CallState state, Instant updatedAt);
+
+	List<VoiceCallSession> findAllByTerminalAtBefore(Instant terminalAt, Pageable pageable);
 
 	@Modifying
 	@Query(value = """
