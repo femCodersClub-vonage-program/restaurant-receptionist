@@ -2,7 +2,7 @@
 
 > Issue: [#27](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/27) | Branch: `docs/27-vonage-tooling-setup`
 > Status: ready
-> Last updated: 2026-11-16
+> Last updated: 2026-11-23
 
 ---
 
@@ -35,7 +35,7 @@ Install and configure the Vonage Server API Bindings (Tooling) MCP server and Vo
 ## Acceptance criteria
 
 - [x] The Tooling MCP server and CLI are installed locally, their versions or package sources are recorded, and an authenticated read-only operation succeeds with each.
-- [ ] A contributor can follow the tested, placeholder-only setup for both tools with her own account without putting credentials in the repository or browser bundle.
+- [x] A contributor can follow the tested, placeholder-only setup for both tools with her own account without putting credentials in the repository or browser bundle.
 - [x] The guide states how credentials reach each process and where configuration is stored; it does not assume either tool automatically reads the project's `.env` file.
 - [x] Commands and results are labelled tested or untested, and operations that cost credits or mutate Vonage state are clearly identified.
 - [x] No project dependency or application architecture is changed.
@@ -81,15 +81,17 @@ Not applicable to the restaurant UI.
 ### Manual verification
 
 - [x] Verify both installations and run one authenticated read-only operation with each using the assignee's account.
-- [ ] Follow the written steps from a separate local setup or ask another participant to verify them with her own account, recording anything not checked, after the pull request is merged.
+- [x] Follow the written steps from a separate local setup or ask another participant to verify them with her own account. The reviewer verified the CLI and the Codex Desktop MCP path, and a third participant verified Claude Code on Windows with her own account; VS Code, Codex CLI, and macOS remain unverified.
 - [x] Check the resulting diff for secrets and machine-specific configuration.
 
 ## Dependencies and environment
 
 - [x] The assignee needs her own Vonage developer account and a compatible MCP client. The mentor has approved read-only setup verification using participants' own accounts.
 - [x] Creating or modifying applications, changing or linking numbers, sending messages, and placing calls are outside the scope of this issue.
-- [ ] Coordinate with [Vonage contract research](vonage-01-contract-verification.spec.md) to avoid duplicate research notes.
+- [x] Coordinate with [Vonage contract research](vonage-01-contract-verification.spec.md) to avoid duplicate research notes.
 
 ## Notes
 
 The deliverable is a working local installation of both tools plus a concise guide linked from this spec. No account mutation or credit-consuming operation is implied by approval of this spec.
+
+Second-person verification (2026-11-22): the reviewer ran the CLI (`vonage auth set`, `vonage balance`) and the Codex desktop MCP `balance` call on Windows with her own account, so the manual verification above counts as done for that path. A third participant verified Claude Code (`2.1.330`, native Windows, Node 22.23.5) with the pinned packages, `cmd /c`, and the deny rules. The single-package MCP command was verified in Copilot CLI and OpenCode on Windows; the pinned two-package form is now the documented default. The contributor verification criterion is met; VS Code, Codex CLI, and macOS remain unverified.
