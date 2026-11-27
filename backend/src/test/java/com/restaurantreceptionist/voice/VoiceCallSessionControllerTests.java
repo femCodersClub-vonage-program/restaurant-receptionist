@@ -7,12 +7,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerification;
+import com.restaurantreceptionist.webhooks.WebhookSignatureVerifier;
 
 @WebMvcTest(VoiceCallSessionController.class)
 class VoiceCallSessionControllerTests {
@@ -21,14 +25,19 @@ class VoiceCallSessionControllerTests {
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private SignatureVerifier signatureVerifier;
+	private WebhookSignatureVerifier signatureVerifier;
 
 	@MockitoBean
 	private VoiceCallSessionService voiceCallSessionService;
 
+	@BeforeEach
+	void verifiedByDefault() {
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.VERIFIED);
+	}
+
 	@Test
 	void answerRejectsMissingSignatureWithServiceUnavailable() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Missing());
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.MISSING_SIGNATURE);
 
 		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -40,7 +49,7 @@ class VoiceCallSessionControllerTests {
 
 	@Test
 	void eventRejectsInvalidSignatureWithUnauthorized() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Invalid());
+		when(signatureVerifier.verify(any(), any())).thenReturn(WebhookSignatureVerification.INVALID_SIGNATURE);
 
 		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -52,8 +61,6 @@ class VoiceCallSessionControllerTests {
 
 	@Test
 	void answerRejectsMissingUuidWithBadRequestWhenVerified() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Verified());
-
 		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{}"))
@@ -65,7 +72,6 @@ class VoiceCallSessionControllerTests {
 
 	@Test
 	void answerReturnsGreetingNccoWhenVerified() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Verified());
 		when(voiceCallSessionService.answer("call-leg-uuid", null))
 			.thenReturn(new AnswerResult.Opened(new Ncco("talk", "Hola", "es-ES")));
 
@@ -78,7 +84,6 @@ class VoiceCallSessionControllerTests {
 
 	@Test
 	void eventAcknowledgesWhenVerified() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Verified());
 		when(voiceCallSessionService.handleEvent(any())).thenReturn(new CallEventResult.Acknowledged());
 
 		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
@@ -89,7 +94,6 @@ class VoiceCallSessionControllerTests {
 
 	@Test
 	void answerReturnsInternalServerErrorWhenSessionCannotBeLocated() throws Exception {
-		when(signatureVerifier.verify(any())).thenReturn(new SignatureVerification.Verified());
 		when(voiceCallSessionService.answer("call-leg-uuid", null))
 			.thenThrow(new VoiceCallSessionNotFoundException("call-leg-uuid"));
 
@@ -97,5 +101,15 @@ class VoiceCallSessionControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"uuid\":\"call-leg-uuid\"}"))
 			.andExpect(status().isInternalServerError());
+	}
+
+	@Test
+	void answerRejectsUnreadableBodyWithBadRequest() throws Exception {
+		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("not json"))
+			.andExpect(status().isBadRequest());
+
+		verifyNoInteractions(voiceCallSessionService);
 	}
 }

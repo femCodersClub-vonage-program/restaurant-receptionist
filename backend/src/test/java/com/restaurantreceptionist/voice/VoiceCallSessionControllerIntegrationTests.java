@@ -8,17 +8,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.UUID;
 
 import com.restaurantreceptionist.TestcontainersConfiguration;
+import com.restaurantreceptionist.webhooks.VonageWebhookFixtures;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest
+@SpringBootTest(properties = {
+	"vonage.webhooks.enabled=true",
+	"vonage.webhooks.api-key=" + VonageWebhookFixtures.API_KEY,
+	"vonage.webhooks.signature-secret=" + VonageWebhookFixtures.SIGNATURE_SECRET,
+	"vonage.webhooks.application-id=" + VonageWebhookFixtures.APPLICATION_ID })
 @AutoConfigureMockMvc
 class VoiceCallSessionControllerIntegrationTests {
 
@@ -32,9 +39,7 @@ class VoiceCallSessionControllerIntegrationTests {
 	void answerCreatesActiveSessionAndReturnsGreetingNcco() throws Exception {
 		var uuid = UUID.randomUUID().toString();
 
-		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\"}"))
+		send("/api/webhooks/vonage/voice/answer", "{\"uuid\":\"" + uuid + "\"}")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].action").value("talk"))
 			.andExpect(jsonPath("$[0].language").value("es-ES"));
@@ -45,14 +50,9 @@ class VoiceCallSessionControllerIntegrationTests {
 	@Test
 	void completedEventTerminatesActiveSession() throws Exception {
 		var uuid = UUID.randomUUID().toString();
-		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\"}"))
-			.andExpect(status().isOk());
+		send("/api/webhooks/vonage/voice/answer", "{\"uuid\":\"" + uuid + "\"}").andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\",\"status\":\"completed\"}"))
+		send("/api/webhooks/vonage/voice/event", "{\"uuid\":\"" + uuid + "\",\"status\":\"completed\"}")
 			.andExpect(status().isNoContent());
 
 		assertThat(repository.findByUuid(uuid).orElseThrow().getState()).isEqualTo(CallState.ABANDONED);
@@ -61,15 +61,10 @@ class VoiceCallSessionControllerIntegrationTests {
 	@Test
 	void answerAfterTerminalEventDoesNotReopenSession() throws Exception {
 		var uuid = UUID.randomUUID().toString();
-		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\",\"status\":\"completed\"}"))
+		send("/api/webhooks/vonage/voice/event", "{\"uuid\":\"" + uuid + "\",\"status\":\"completed\"}")
 			.andExpect(status().isNoContent());
 
-		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\"}"))
-			.andExpect(status().isNoContent());
+		send("/api/webhooks/vonage/voice/answer", "{\"uuid\":\"" + uuid + "\"}").andExpect(status().isNoContent());
 
 		assertThat(repository.findByUuid(uuid).orElseThrow().getState()).isEqualTo(CallState.ABANDONED);
 	}
@@ -78,9 +73,7 @@ class VoiceCallSessionControllerIntegrationTests {
 	void answerPersistsConversationUuid() throws Exception {
 		var uuid = UUID.randomUUID().toString();
 
-		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\",\"conversation_uuid\":\"conversation-123\"}"))
+		send("/api/webhooks/vonage/voice/answer", "{\"uuid\":\"" + uuid + "\",\"conversation_uuid\":\"conversation-123\"}")
 			.andExpect(status().isOk());
 
 		assertThat(repository.findByUuid(uuid).orElseThrow().getConversationUuid()).isEqualTo("conversation-123");
@@ -89,18 +82,21 @@ class VoiceCallSessionControllerIntegrationTests {
 	@Test
 	void completedEventPersistsDisconnectedBy() throws Exception {
 		var uuid = UUID.randomUUID().toString();
-		mockMvc.perform(post("/api/webhooks/vonage/voice/answer")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\"}"))
-			.andExpect(status().isOk());
+		send("/api/webhooks/vonage/voice/answer", "{\"uuid\":\"" + uuid + "\"}").andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/webhooks/vonage/voice/event")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"uuid\":\"" + uuid + "\",\"status\":\"completed\",\"disconnected_by\":\"user\"}"))
+		send("/api/webhooks/vonage/voice/event",
+			"{\"uuid\":\"" + uuid + "\",\"status\":\"completed\",\"disconnected_by\":\"user\"}")
 			.andExpect(status().isNoContent());
 
 		var stored = repository.findByUuid(uuid).orElseThrow();
 		assertThat(stored.getState()).isEqualTo(CallState.ABANDONED);
 		assertThat(stored.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
+	}
+
+	private ResultActions send(String url, String body) throws Exception {
+		return mockMvc.perform(post(url)
+			.header(HttpHeaders.AUTHORIZATION, VonageWebhookFixtures.authorizationFor(body))
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(body));
 	}
 }

@@ -1,8 +1,5 @@
 package com.restaurantreceptionist;
 
-import com.restaurantreceptionist.voice.SignatureVerification;
-import com.restaurantreceptionist.voice.SignatureVerifier;
-
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -16,11 +13,6 @@ public class TestcontainersConfiguration {
 	@ServiceConnection
 	PostgreSQLContainer postgresContainer() {
 		return new PostgreSQLContainer(DockerImageName.parse("postgres:17.11"));
-	}
-
-	@Bean
-	SignatureVerifier signatureVerifier() {
-		return request -> new SignatureVerification.Verified();
 	}
 
 }
