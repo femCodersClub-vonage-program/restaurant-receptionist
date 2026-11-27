@@ -55,6 +55,11 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.vonage</groupId>
+			<artifactId>server-sdk</artifactId>
+			<version>9.15.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
