@@ -61,13 +61,13 @@ class VoicePersistenceIntegrationTests {
 	void persistsAbandonedSession() {
 		var now = Instant.parse("2027-05-14T13:30:00Z");
 		var session = VoiceCallSession.create(UUID.randomUUID().toString(), UUID.randomUUID().toString());
-		assertThat(session.markAbandoned("caller hung up", DisconnectedBy.CALLER, now)).isTrue();
+		assertThat(session.markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, now)).isTrue();
 
 		var saved = voiceCallSessionRepository.saveAndFlush(session);
 		var retrieved = voiceCallSessionRepository.findById(saved.getId()).orElseThrow();
 
 		assertThat(retrieved.getState()).isEqualTo(CallState.ABANDONED);
-		assertThat(retrieved.getEndReason()).isEqualTo("caller hung up");
+		assertThat(retrieved.getEndReason()).isEqualTo(EndReason.DECLINED);
 		assertThat(retrieved.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
 		assertThat(retrieved.getTerminalAt()).isEqualTo(now);
 	}
@@ -122,7 +122,7 @@ class VoicePersistenceIntegrationTests {
 
 		assertThat(saved.getVersion()).isZero();
 
-		saved.markAbandoned("caller hung up", DisconnectedBy.CALLER, Instant.parse("2027-05-14T13:30:00Z"));
+		saved.markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, Instant.parse("2027-05-14T13:30:00Z"));
 		voiceCallSessionRepository.saveAndFlush(saved);
 
 		assertThat(saved.getVersion()).isEqualTo(1L);

@@ -3,6 +3,7 @@ package com.restaurantreceptionist.voice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import com.restaurantreceptionist.config.ClockConfiguration;
 import com.restaurantreceptionist.config.VoiceProperties;
@@ -33,6 +35,10 @@ class VoiceCallSessionServiceTests {
 
 	private static final Duration TIMEOUT = Duration.ofMinutes(20);
 
+	private static final Duration RETENTION = Duration.ofDays(30);
+
+	private static final int BATCH_SIZE = 100;
+
 	@Mock
 	private VoiceCallSessionRepository repository;
 
@@ -40,7 +46,7 @@ class VoiceCallSessionServiceTests {
 
 	@BeforeEach
 	void setUp() {
-		service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT), null);
+		service = new VoiceCallSessionService(repository, CLOCK, new VoiceProperties(TIMEOUT, RETENTION, BATCH_SIZE), null);
 	}
 
 	@Test
@@ -96,7 +102,26 @@ class VoiceCallSessionServiceTests {
 		service.handleEvent(new CallEvent("call-leg-uuid", null, "rejected", null, null, "declined", null));
 
 		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
-		assertThat(session.getEndReason()).isEqualTo("declined");
+		assertThat(session.getEndReason()).isEqualTo(EndReason.DECLINED);
+	}
+
+	@Test
+	void rejectedEventMapsUnknownDetailToUnrecognizedCategory() {
+		var session = VoiceCallSession.create("call-leg-uuid", null);
+		when(repository.findByUuid("call-leg-uuid")).thenReturn(Optional.of(session));
+
+		service.handleEvent(new CallEvent("call-leg-uuid", null, "rejected", null, null, "some_provider_value", null));
+
+		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
+		assertThat(session.getEndReason()).isEqualTo(EndReason.UNRECOGNIZED);
+	}
+
+	@Test
+	void eventWithNeitherStatusNorReasonIsAcknowledgedWithoutStateChange() {
+		var result = service.handleEvent(new CallEvent("call-leg-uuid", null, null, null, null, null, NOW));
+
+		assertThat(result).isEqualTo(new CallEventResult.Acknowledged());
+		verifyNoInteractions(repository);
 	}
 
 	@Test
@@ -171,5 +196,28 @@ class VoiceCallSessionServiceTests {
 
 		assertThat(result).isEqualTo(new CallEventResult.Acknowledged());
 		assertThat(session.getState()).isEqualTo(CallState.EXPIRED);
+	}
+
+	@Test
+	void cleanupTerminalSessionsDeletesSessionsOlderThanRetention() {
+		var old = VoiceCallSession.createAsAbandoned("old-uuid", null, EndReason.DECLINED, null, NOW.minus(RETENTION));
+		when(repository.findAllByTerminalAtBefore(any(Instant.class), any(Pageable.class))).thenReturn(List.of(old));
+
+		int removed = service.cleanupTerminalSessions();
+
+		assertThat(removed).isEqualTo(1);
+		verify(repository).deleteAllInBatch(List.of(old));
+
+		ArgumentCaptor<Instant> cutoff = ArgumentCaptor.forClass(Instant.class);
+		verify(repository).findAllByTerminalAtBefore(cutoff.capture(), any(Pageable.class));
+		assertThat(cutoff.getValue()).isEqualTo(NOW.minus(RETENTION));
+	}
+
+	@Test
+	void cleanupTerminalSessionsReturnsZeroWhenNothingIsOld() {
+		when(repository.findAllByTerminalAtBefore(any(Instant.class), any(Pageable.class))).thenReturn(List.of());
+
+		assertThat(service.cleanupTerminalSessions()).isZero();
+		verify(repository, never()).deleteAllInBatch(any());
 	}
 }

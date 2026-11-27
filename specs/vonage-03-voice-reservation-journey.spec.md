@@ -73,7 +73,7 @@ The mentor confirmed the following for #35 on 2026-11-23:
 3. Signature verification uses the shared verifier owned by [#56](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/56). #35 develops against a verifier double and must integrate the real verifier before closure; the JWT library is selected in #56.
 4. Every publicly exposed Voice endpoint requires a valid signature, including the demo. A missing signature returns `503` so Vonage can retry with a signed request; an invalid signature returns `401`. Neither case mutates session state. When `application_id` is present, it must match the configured application.
 5. Session creation uses a unique constraint on `uuid` plus optimistic locking with `@Version`. Two simultaneous `answer` requests create one session, and a repeated `answer` preserves the current step. A `completed` that arrives before a delayed `answer` must prevent the later request from opening an active session.
-6. Inactivity expiry defaults to 20 minutes and is configurable. Terminal-session retention, cleanup, and late-callback handling are proposed below for PR review.
+6. Inactivity expiry defaults to 20 minutes and is configurable. Terminal-session retention (30 days, configurable) and batched cleanup through a scheduled job are approved and implemented; late-callback handling is documented below.
 7. #35 returns a short `es-ES` greeting NCCO and omits `bargeIn`. #36 adds the first question and the working `/input` callback, with `speech.language` set to `es-ES`.
 8. A hang-up before reservation persistence ends the call without a reservation; a hang-up after a confirmed reservation is persisted preserves it. `disconnected_by` is diagnostic only. #37 connects call state to the reservation outcome.
 
@@ -127,11 +127,16 @@ Return a short `es-ES` greeting and omit `bargeIn`:
 | `started`, `ringing` | Acknowledge and log; no session change. |
 | `answered` | If a session exists, confirm it; otherwise acknowledge and log without creating one. The `answer` webhook is authoritative for creation. |
 | `completed` | Mark an active session terminal as `ABANDONED` unless #37 has already set `COMPLETED`; record `disconnected_by` as a diagnostic. If no session exists, persist a minimal terminal tombstone so a delayed `answer` cannot open an active session. |
-| `rejected`, `failed` | Same terminal handling. Record the `detail` diagnostic (`invalid_number`, `restricted`, `declined`, `throttled`, `cannot_route`, `number_out_of_service`, `internal_error`) as `end_reason`. If `uuid` is absent (documented for `rejected`), acknowledge and log only. |
+| `rejected`, `failed` | Same terminal handling. Map the `detail` value to a known diagnostic category (`INVALID_NUMBER`, `RESTRICTED`, `DECLINED`, `THROTTLED`, `CANNOT_ROUTE`, `NUMBER_OUT_OF_SERVICE`, `INTERNAL_ERROR`, or `UNRECOGNIZED`) and store that category as `end_reason`. If `uuid` is absent (documented for `rejected`), acknowledge and log only. |
 | `input` | Not in #35; implemented in #36. |
 | `transfer` | Acknowledge; not applicable. |
 | Error webhook (`reason`) | Log safely as a provider error; do not count it as a caller attempt and do not create a reservation. Acknowledge and log only — an error webhook reports a provider-side error and does not signal that the call has ended. |
 | Other documented statuses (`busy`, `cancelled`, `unanswered`, `reconnecting`, `reconnected`, `timeout`, `record`, `human`/`machine`) | Acknowledge and log; mutate state only through a terminal event above. |
+| Neither `status` nor `reason` | Acknowledge and log with the `UNRECOGNIZED` category; no state change and no `5xx`. |
+
+Diagnostic categories, not raw strings: `end_reason` stores only the known categories listed above; the raw `detail` and `reason` values are mapped and never copied into logs or stored data. The `reason` value of an error webhook is logged only as the `PROVIDER_ERROR` category.
+
+The `detail` field is documented per status: `unanswered` carries `unavailable` and `timeout`, `rejected` carries `invalid_number`, `restricted`, `declined`, and `throttled`, and `failed` carries `cannot_route`, `number_out_of_service`, and `internal_error`. Only the terminal statuses (`rejected`, `failed`) map their `detail` to `end_reason`; the non-terminal `unanswered` values are never persisted. For CPS throttling the `detail` may append extra text after `throttled` (for example `"throttled, see knowledge article …"`), so the mapping matches on the leading token.
 
 #### State transitions and idempotency
 
@@ -149,7 +154,7 @@ Return a short `es-ES` greeting and omit `bargeIn`:
 | Event on terminal state | `ABANDONED` / `COMPLETED` / `EXPIRED` | No change; acknowledge. |
 
 - Rely on the unique `uuid` constraint and catch `DataIntegrityViolationException` (or use `INSERT ... ON CONFLICT`) so a concurrent answer re-reads the winning row.
-- Use `@Version` for updates. On an optimistic-lock conflict, re-read and re-evaluate; apply only a non-regressing transition.
+- Use `@Version` for updates. On an optimistic-lock conflict, the failed transaction rolls back first and the handler then re-reads in a fresh transaction and re-evaluates; apply only a non-regressing transition.
 - Session creation and event updates run in transactions.
 
 #### HTTP responses
@@ -172,12 +177,12 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 - `disconnected_by` is diagnostic: `user` and `platform` do not encode whether a reservation was persisted.
 - #37 connects the recorded call state to the actual reservation outcome and sets `COMPLETED` when a reservation is persisted.
 
-#### Expiry, retention, and cleanup (proposal for PR review)
+#### Expiry, retention, and cleanup
 
-- The 20-minute inactivity default is approved. Keep the timeout configurable and use the injected `Clock` for deterministic tests.
-- Proposal: retain terminal sessions for 30 days (configurable) to absorb late callbacks and support diagnostics. The provider retry window is not verified, so this is a safety margin rather than a derived value.
-- Proposal: a scheduled maintenance job marks stale `ACTIVE` sessions `EXPIRED` and deletes terminal sessions older than the retention period in bounded batches.
-- Proposal: late callbacks after cleanup are acknowledged (`2xx`) and logged without creating a session. A late `answer` whose tombstone has been deleted cannot be distinguished from a genuine new call; document this residual risk until the retry window is verified.
+- The 20-minute inactivity default is approved. Keep the timeout configurable (`voice.inactivity-timeout`) and use the injected `Clock` for deterministic tests.
+- Approved: retain terminal sessions for 30 days (configurable, `voice.retention-period`) to absorb late callbacks and support diagnostics. The provider retry window is not verified, so this is a safety margin rather than a derived value.
+- Approved: a scheduled maintenance job marks stale `ACTIVE` sessions `EXPIRED` and deletes terminal sessions older than the retention period in bounded batches (`voice.cleanup-batch-size`).
+- Late callbacks after cleanup are acknowledged (`2xx`) and logged without creating a session. A late `answer` whose tombstone has been deleted cannot be distinguished from a genuine new call; this residual risk remains documented until the retry window is verified.
 
 ### Data and migrations
 
@@ -194,7 +199,7 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
 | `terminal_at` | `TIMESTAMPTZ` | Nullable; set on terminal transition from the event `timestamp`, or the server clock when that field is absent. |
-| `end_reason` | `TEXT` | Nullable; safe diagnostic only. Holds `detail` for `rejected`/`failed`; null for `completed`. |
+| `end_reason` | `TEXT` | Nullable; safe diagnostic category only. Stores the mapped category for `rejected`/`failed` (`INVALID_NUMBER`, `RESTRICTED`, `DECLINED`, `THROTTLED`, `CANNOT_ROUTE`, `NUMBER_OUT_OF_SERVICE`, `INTERNAL_ERROR`, or `UNRECOGNIZED`); null for `completed`. Raw `detail`/`reason` values are never stored. |
 | `disconnected_by` | `VARCHAR(20)` | Nullable; diagnostic only. |
 | `version` | `BIGINT` | `NOT NULL DEFAULT 0` for optimistic locking. |
 
@@ -228,8 +233,10 @@ Every publicly exposed Voice endpoint requires the signed JWT enforced by the sh
 - [ ] Verify a repeated answer preserves `current_step` and does not create a second session.
 - [ ] Verify `completed` before a delayed answer persists a terminal tombstone and the later answer does not open an active session.
 - [ ] Verify `completed`, `rejected`, and `failed` terminate an active session, duplicate or out-of-order events do not regress state, and unknown or absent `uuid` is acknowledged and logged; only terminal events create a tombstone.
+- [ ] Verify two concurrent terminal events terminate the same session exactly once, and that the losing transaction rolls back before the handler re-reads in a fresh transaction.
+- [ ] Verify that an event with neither `status` nor `reason` is acknowledged without a `5xx`, and that raw `detail`/`reason` values are mapped to categories rather than stored or logged verbatim.
 - [ ] Verify a missing signature returns `503`, an invalid signature or claims and an `application_id` mismatch return `401`, and valid signed requests are processed; rejected requests leave state unchanged.
-- [ ] Verify the 20-minute inactivity expiry with the injected `Clock`, and the retention/cleanup rule if implemented.
+- [ ] Verify the 20-minute inactivity expiry with the injected `Clock`, and that the scheduled job deletes terminal sessions older than the retention period in bounded batches while keeping recent ones.
 - [ ] Verify a database failure returns `5xx` so Vonage can retry.
 - [ ] Use PostgreSQL-backed Testcontainers tests for persisted state, constraints, and concurrency, and for the final handoff to #7.
 - [ ] Use a verifier double in #35 and re-run the signature scenarios against the #56 verifier before closure.

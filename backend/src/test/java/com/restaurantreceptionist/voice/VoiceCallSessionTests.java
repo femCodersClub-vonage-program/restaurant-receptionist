@@ -16,11 +16,11 @@ class VoiceCallSessionTests {
 	void markAbandonedSetsTerminalStateWhenActive() {
 		var session = newSession();
 
-		boolean applied = session.markAbandoned("caller hung up", DisconnectedBy.CALLER, NOW);
+		boolean applied = session.markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, NOW);
 
 		assertThat(applied).isTrue();
 		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
-		assertThat(session.getEndReason()).isEqualTo("caller hung up");
+		assertThat(session.getEndReason()).isEqualTo(EndReason.DECLINED);
 		assertThat(session.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
 		assertThat(session.getTerminalAt()).isEqualTo(NOW);
 	}
@@ -30,7 +30,7 @@ class VoiceCallSessionTests {
 		var session = newSession();
 		session.markExpired(NOW);
 
-		boolean applied = session.markAbandoned("caller hung up", DisconnectedBy.CALLER, NOW);
+		boolean applied = session.markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, NOW);
 
 		assertThat(applied).isFalse();
 		assertThat(session.getState()).isEqualTo(CallState.EXPIRED);
@@ -42,7 +42,7 @@ class VoiceCallSessionTests {
 	@Test
 	void markAbandonedRejectsNullNow() {
 		assertThatNullPointerException()
-				.isThrownBy(() -> newSession().markAbandoned("caller hung up", DisconnectedBy.CALLER, null));
+				.isThrownBy(() -> newSession().markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, null));
 	}
 
 	@Test
@@ -59,7 +59,7 @@ class VoiceCallSessionTests {
 	@Test
 	void markExpiredDoesNotRegressTerminalState() {
 		var session = newSession();
-		session.markAbandoned("caller hung up", DisconnectedBy.CALLER, NOW);
+		session.markAbandoned(EndReason.DECLINED, DisconnectedBy.CALLER, NOW);
 
 		boolean applied = session.markExpired(NOW.plusSeconds(60));
 
@@ -96,10 +96,10 @@ class VoiceCallSessionTests {
 	@Test
 	void createAsAbandonedProducesAbandonedSession() {
 		var session = VoiceCallSession.createAsAbandoned(
-			"call-leg-uuid", "conversation-uuid", "caller hung up", DisconnectedBy.CALLER, NOW);
+			"call-leg-uuid", "conversation-uuid", EndReason.DECLINED, DisconnectedBy.CALLER, NOW);
 
 		assertThat(session.getState()).isEqualTo(CallState.ABANDONED);
-		assertThat(session.getEndReason()).isEqualTo("caller hung up");
+		assertThat(session.getEndReason()).isEqualTo(EndReason.DECLINED);
 		assertThat(session.getDisconnectedBy()).isEqualTo(DisconnectedBy.CALLER);
 		assertThat(session.getTerminalAt()).isEqualTo(NOW);
 		assertThat(session.isActive()).isFalse();
@@ -108,13 +108,13 @@ class VoiceCallSessionTests {
 	@Test
 	void createAsAbandonedRejectsNullTerminalAt() {
 		assertThatNullPointerException()
-			.isThrownBy(() -> VoiceCallSession.createAsAbandoned("u", "c", "reason", DisconnectedBy.CALLER, null));
+			.isThrownBy(() -> VoiceCallSession.createAsAbandoned("u", "c", EndReason.DECLINED, DisconnectedBy.CALLER, null));
 	}
 
 	@Test
 	void isActiveIsTrueOnlyForActiveState() {
 		var active = VoiceCallSession.create("u", "c");
-		var abandoned = VoiceCallSession.createAsAbandoned("u2", "c2", "reason", DisconnectedBy.CALLER, NOW);
+		var abandoned = VoiceCallSession.createAsAbandoned("u2", "c2", EndReason.DECLINED, DisconnectedBy.CALLER, NOW);
 
 		assertThat(active.isActive()).isTrue();
 		assertThat(abandoned.isActive()).isFalse();

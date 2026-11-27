@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +32,7 @@ public class VoiceCallSessionService {
 		this.repository = repository;
 		this.clock = clock;
 		this.properties = properties;
-		this.self = self;
+		this.self = self != null ? self : this;
 	}
 
 	@Transactional
@@ -48,18 +49,33 @@ public class VoiceCallSessionService {
 			: new AnswerResult.AlreadyTerminal();
 	}
 
-	@Transactional
 	public CallEventResult handleEvent(CallEvent event) {
 		Objects.requireNonNull(event, "event must not be null");
 
-		if (isErrorWebhook(event)) {
+		boolean hasStatus = event.status() != null && !event.status().isBlank();
+		if (!hasStatus && hasReason(event)) {
 			return handleErrorWebhook(event);
+		}
+		if (!hasStatus) {
+			log.warn("Voice event without status or reason acknowledged; no state change (category=UNRECOGNIZED, uuid={}, timestamp={})",
+				event.uuid(), event.timestamp());
+			return new CallEventResult.Acknowledged();
 		}
 		if (event.uuid() == null || event.uuid().isBlank()) {
 			log.warn("Voice event acknowledged without uuid; no state change (status={}, timestamp={})", event.status(), event.timestamp());
 			return new CallEventResult.Acknowledged();
 		}
 
+		try {
+			return self.applyEvent(event);
+		} catch (OptimisticLockingFailureException exception) {
+			// The failed transaction has already been rolled back; re-read in a fresh transaction.
+			return self.reevaluateTerminal(event);
+		}
+	}
+
+	@Transactional
+	public CallEventResult applyEvent(CallEvent event) {
 		return repository.findByUuid(event.uuid())
 			.map(call -> handleExistingSession(event, call))
 			.orElseGet(() -> handleUnknownSession(event));
@@ -73,7 +89,9 @@ public class VoiceCallSessionService {
 
 		Instant terminalAt = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
 		DisconnectedBy disconnectedBy = DisconnectedBy.map(event.disconnectedBy());
-		int inserted = repository.insertTerminalIfAbsent(event.uuid(), event.conversationUuid(), event.detail(),
+		EndReason endReason = EndReason.fromDetail(event.detail());
+		int inserted = repository.insertTerminalIfAbsent(event.uuid(), event.conversationUuid(),
+			endReason != null ? endReason.name() : null,
 			disconnectedBy != null ? disconnectedBy.name() : null, terminalAt);
 
 		if (inserted == 0) {
@@ -83,8 +101,8 @@ public class VoiceCallSessionService {
 				: new CallEventResult.Acknowledged();
 		}
 
-		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={}, timestamp={}, detail={})",
-			event.uuid(), event.status(), event.timestamp(), event.detail());
+		log.info("Terminal tombstone persisted for unknown session (uuid={}, status={}, timestamp={}, endReason={})",
+			event.uuid(), event.status(), event.timestamp(), endReason);
 		return new CallEventResult.Terminated(CallState.ABANDONED);
 	}
 
@@ -97,24 +115,20 @@ public class VoiceCallSessionService {
 	}
 
 	private CallEventResult handleErrorWebhook(CallEvent event) {
-		log.warn("Provider error webhook received (reason={}, conversationUuid={}, timestamp={})", event.reason(),
+		log.warn("Provider error webhook acknowledged; no state change (category=PROVIDER_ERROR, conversationUuid={}, timestamp={})",
 			event.conversationUuid(), event.timestamp());
 		return new CallEventResult.Acknowledged();
 	}
 
 	private CallEventResult terminateActiveSession(CallEvent event, VoiceCallSession call) {
-		try {
-			Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
-			boolean applied = call.markAbandoned(event.detail(), DisconnectedBy.map(event.disconnectedBy()), now);
-			if (!applied) {
-				return new CallEventResult.Acknowledged();
-			}
-			repository.flush();
-			log.info("Call session marked abandoned (uuid={}, timestamp={}, detail={})", event.uuid(), event.timestamp(), event.detail());
-			return new CallEventResult.Terminated(call.getState());
-		} catch (OptimisticLockingFailureException exception) {
-			return self.reevaluateTerminal(event);
+		Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
+		boolean applied = call.markAbandoned(EndReason.fromDetail(event.detail()), DisconnectedBy.map(event.disconnectedBy()), now);
+		if (!applied) {
+			return new CallEventResult.Acknowledged();
 		}
+		repository.flush();
+		log.info("Call session marked abandoned (uuid={}, timestamp={}, endReason={})", event.uuid(), event.timestamp(), call.getEndReason());
+		return new CallEventResult.Terminated(call.getState());
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -124,7 +138,7 @@ public class VoiceCallSessionService {
 			return new CallEventResult.Acknowledged();
 		}
 		Instant now = event.timestamp() != null ? event.timestamp() : Instant.now(clock);
-		boolean applied = call.markAbandoned(event.detail(), DisconnectedBy.map(event.disconnectedBy()), now);
+		boolean applied = call.markAbandoned(EndReason.fromDetail(event.detail()), DisconnectedBy.map(event.disconnectedBy()), now);
 		return applied
 			? new CallEventResult.Terminated(call.getState())
 			: new CallEventResult.Acknowledged();
@@ -146,6 +160,19 @@ public class VoiceCallSessionService {
 		return expired;
 	}
 
+	@Transactional
+	public int cleanupTerminalSessions() {
+		Instant cutoff = Instant.now(clock).minus(properties.retentionPeriod());
+		List<VoiceCallSession> terminal = repository.findAllByTerminalAtBefore(cutoff,
+			PageRequest.of(0, properties.cleanupBatchSize()));
+		if (terminal.isEmpty()) {
+			return 0;
+		}
+		repository.deleteAllInBatch(terminal);
+		log.info("Deleted {} voice call session(s) older than the retention period", terminal.size());
+		return terminal.size();
+	}
+
 	private static boolean isNonTerminal(CallEvent event) {
 		return !TERMINAL_STATUSES.contains(event.status());
 	}
@@ -160,9 +187,8 @@ public class VoiceCallSessionService {
 		}
 	}
 
-	private static boolean isErrorWebhook(CallEvent event) {
-		return (event.status() == null || event.status().isBlank())
-			&& event.reason() != null && !event.reason().isBlank();
+	private static boolean hasReason(CallEvent event) {
+		return event.reason() != null && !event.reason().isBlank();
 	}
 
 	private static Ncco greetingNcco() {
