@@ -156,6 +156,7 @@ The `detail` field is documented per status: `unanswered` carries `unavailable` 
 - Rely on the unique `uuid` constraint and catch `DataIntegrityViolationException` (or use `INSERT ... ON CONFLICT`) so a concurrent answer re-reads the winning row.
 - Use `@Version` for updates. On an optimistic-lock conflict, the failed transaction rolls back first and the handler then re-reads in a fresh transaction and re-evaluates; apply only a non-regressing transition.
 - Session creation and event updates run in transactions.
+- A terminal event that finds no session is handled the same way regardless of why no session exists. When the `answer` webhook never arrived (or `completed` arrived first), the tombstone is required so a delayed `answer` cannot reopen the call. When the record was already deleted by cleanup, the event is indistinguishable from that case, so a redundant tombstone is persisted and is removed again by the next cleanup run.
 
 #### HTTP responses
 
@@ -182,7 +183,8 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 - The 20-minute inactivity default is approved. Keep the timeout configurable (`voice.inactivity-timeout`) and use the injected `Clock` for deterministic tests.
 - Approved: retain terminal sessions for 30 days (configurable, `voice.retention-period`) to absorb late callbacks and support diagnostics. The provider retry window is not verified, so this is a safety margin rather than a derived value.
 - Approved: a scheduled maintenance job marks stale `ACTIVE` sessions `EXPIRED` and deletes terminal sessions older than the retention period in bounded batches (`voice.cleanup-batch-size`).
-- Late callbacks after cleanup are acknowledged (`2xx`) and logged without creating a session. A late `answer` whose tombstone has been deleted cannot be distinguished from a genuine new call; this residual risk remains documented until the retry window is verified.
+- A terminal callback that arrives after the record has been cleaned up is treated like any terminal event with no session: a fresh tombstone is persisted (see "State transitions and idempotency"), because it cannot be distinguished from a callback that preceded the first answer. That redundant tombstone is removed again by the next cleanup run.
+- Limitation: a delayed `answer` that arrives after cleanup deleted the terminal record cannot be distinguished from a genuine new call and may open a new `ACTIVE` session. Because the retention period (30 days) far exceeds the provider retry window, this is a theoretical residual risk; it is documented rather than mitigated until the retry window is verified.
 
 ### Data and migrations
 
