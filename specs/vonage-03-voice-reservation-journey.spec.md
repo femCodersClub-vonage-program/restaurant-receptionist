@@ -2,7 +2,7 @@
 
 > Related issues: [#35](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/35), [#36](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/36), [#37](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/37)
 > Status: #35 entry, routes, greeting, and PostgreSQL session design approved; implementation in progress. #36 and #37 remain planned.
-> Last updated: 2026-11-25
+> Last updated: 2026-11-27
 
 ---
 
@@ -112,8 +112,9 @@ Return a short `es-ES` greeting and omit `bargeIn`:
 
 #### Signature verification
 
-- Apply the shared verifier from #56 to both routes. #35 uses a test double with the same contract and replaces it with the real verifier before closure. The verifier owns JWT-library choice and claim parsing.
-- The test double is a permissive verifier (`SignatureVerification.Verified`) that lives only in the test sources (`TestcontainersConfiguration`); the controller slice test uses `@MockitoBean`. `main` has no `SignatureVerifier` bean, so the application does not start outside tests until #56 supplies the real verifier. This is intended fail-closed behaviour, not a regression.
+- Apply the shared verifier from #56 to both routes. The verifier owns JWT-library choice and claim parsing.
+- Both routes read the raw body and the `Authorization` header, verify them with `WebhookSignatureVerifier` before parsing, and return `503` (missing) or `401` (invalid) without parsing the body or changing state. The controller slice test replaces the verifier with a `@MockitoBean`; the integration tests enable real verification with locally signed fictional fixtures.
+- Verification runs only when enabled in the configuration. Otherwise the verifier fails closed and treats every request as unsigned, so the endpoints return `503` even for a validly signed request.
 - A missing signature (no `Authorization` header, no `Bearer` scheme, or no JWT) returns `503` so Vonage can attempt a signed retry; session state is unchanged.
 - An invalid signature (HMAC mismatch, unsupported `alg`/`typ`, wrong `iss`, or `application_id` mismatch when the claim is present) returns `401`; session state is unchanged.
 - The documented rare unsigned callback is treated as a missing signature: return `503`, do not process it, and allow the retry.
