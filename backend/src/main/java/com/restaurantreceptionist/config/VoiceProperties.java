@@ -5,5 +5,5 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "voice")
-public record VoiceProperties(Duration inactivityTimeout) {
+public record VoiceProperties(Duration inactivityTimeout, Duration retentionPeriod, int cleanupBatchSize) {
 }
