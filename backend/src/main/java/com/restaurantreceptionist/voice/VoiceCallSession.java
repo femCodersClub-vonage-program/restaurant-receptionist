@@ -46,8 +46,9 @@ public class VoiceCallSession {
 	@Column(name = "terminal_at")
 	private Instant terminalAt;
 
+	@Enumerated(EnumType.STRING)
 	@Column(name = "end_reason")
-	private String endReason;
+	private EndReason endReason;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "disconnected_by", length = 20)
@@ -59,7 +60,7 @@ public class VoiceCallSession {
 	protected VoiceCallSession() {
 	}
 
-	public VoiceCallSession(String uuid, String conversationUuid, CallState state, CurrentStep currentStep, String endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+	public VoiceCallSession(String uuid, String conversationUuid, CallState state, CurrentStep currentStep, EndReason endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
 		Objects.requireNonNull(uuid, "uuid must not be null");
 		this.uuid = uuid;
 		this.conversationUuid = conversationUuid;
@@ -74,12 +75,12 @@ public class VoiceCallSession {
 		return new VoiceCallSession(uuid, conversationUuid, CallState.ACTIVE, CurrentStep.INITIAL_GREETING, null, null, null);
 	}
 
-	public static VoiceCallSession createAsAbandoned(String uuid, String conversationUuid, String endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
+	public static VoiceCallSession createAsAbandoned(String uuid, String conversationUuid, EndReason endReason, DisconnectedBy disconnectedBy, Instant terminalAt) {
 		Objects.requireNonNull(terminalAt, "now must not be null");
 		return new VoiceCallSession(uuid, conversationUuid, CallState.ABANDONED, null, endReason, disconnectedBy, terminalAt);
 	}
 
-	public boolean markAbandoned(String endReason, DisconnectedBy disconnectedBy, Instant now) {
+	public boolean markAbandoned(EndReason endReason, DisconnectedBy disconnectedBy, Instant now) {
 		Objects.requireNonNull(now, "now must not be null");
 		if (state != CallState.ACTIVE) {
 			return false;
@@ -141,7 +142,7 @@ public class VoiceCallSession {
 		return terminalAt;
 	}
 
-	public String getEndReason() {
+	public EndReason getEndReason() {
 		return endReason;
 	}
 
