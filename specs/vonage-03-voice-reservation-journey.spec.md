@@ -193,7 +193,7 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 | `current_step` | `VARCHAR(64)` | Nullable; preserved across repeated answers. |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, default `CURRENT_TIMESTAMP`. |
-| `terminal_at` | `TIMESTAMPTZ` | Nullable; set on terminal transition. |
+| `terminal_at` | `TIMESTAMPTZ` | Nullable; set on terminal transition from the event `timestamp`, or the server clock when that field is absent. |
 | `end_reason` | `TEXT` | Nullable; safe diagnostic only. Holds `detail` for `rejected`/`failed`; null for `completed`. |
 | `disconnected_by` | `VARCHAR(20)` | Nullable; diagnostic only. |
 | `version` | `BIGINT` | `NOT NULL DEFAULT 0` for optimistic locking. |
@@ -205,7 +205,7 @@ An event with an unknown or absent `uuid` is acknowledged rather than rejected, 
 
 - The Answer webhook must return an NCCO JSON array. It defaults to `GET` and is configurable to `POST`; #35 requires `POST` in the Dashboard configuration.
 - The event webhook defaults to `POST` and is expected to be acknowledged with a `2xx`.
-- Answer and event callbacks expose the call-leg `uuid` and `conversation_uuid`. `completed` includes `disconnected_by` (`user` or `platform`). `rejected` may arrive without a `uuid` before a call resource exists.
+- Answer and event callbacks expose the call-leg `uuid` and `conversation_uuid`. Event callbacks also include a `timestamp` in ISO 8601 format. `completed` includes `disconnected_by` (`user` or `platform`). `rejected` may arrive without a `uuid` before a call resource exists. #35 uses the event `timestamp` to populate `terminal_at` and falls back to the server clock when the field is absent.
 - Signed webhooks use an `Authorization: Bearer` JWT with `alg: HS256`, `iss: "Vonage"`, `api_key`, optional `application_id`, and an optional `payload_hash`. The exact verification implementation belongs to #56.
 - Official references: [Voice webhook reference](https://developer.vonage.com/en/voice/voice-api/webhook-reference), [NCCO reference](https://developer.vonage.com/en/voice/voice-api/ncco-reference), and [signed webhooks](https://developer.vonage.com/en/getting-started/concepts/webhooks).
 - Still unverified locally: practical Spanish recognition accuracy, the exact retry and duplicate-delivery ordering, and whether the JWT `jti` is retry-stable. Do not use `jti` as an idempotency key.
