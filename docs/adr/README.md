@@ -15,3 +15,4 @@ Use the [ADR template](_template.md) for new records.
 - [ADR-005: Pin the initial runtime and tooling versions](005-pin-initial-runtime-and-tooling-versions.md)
 - [ADR-006: Add generated OpenAPI documentation](006-add-generated-openapi-documentation.md)
 - [ADR-007: Serialize reservation creation with PostgreSQL advisory locks](007-serialize-reservation-creation-with-postgresql-advisory-locks.md)
+- [ADR-008: Verify signed Vonage webhooks with the official Java SDK](008-verify-signed-vonage-webhooks.md)
