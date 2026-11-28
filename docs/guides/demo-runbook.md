@@ -12,6 +12,18 @@ In scope: the controlled local demo, its fictional data, its reset path, and the
 
 Out of scope: production deployment, real restaurant operation, real customer data, and live calls or SMS without separate authorization.
 
+## Ownership
+
+The runbook follows the responsibilities in [issue #39](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/39):
+
+| Participant | Demo responsibility |
+| --- | --- |
+| Inés (isalvama) | Incoming call, Spanish greeting and guided capture; explain what the caller hears during a retry or correction and how the call reaches confirmation. |
+| Andrea (androsrivas) | Final confirmation and persistence, the same-date alternative, and notification delivery status; distinguish an accepted request from a delivered SMS. |
+| Joana (JoneJoana) | Manual reservation entry, dashboard refresh, and show whether the SMS request for an eligible telephone booking was accepted or failed. |
+
+Shared setup and cleanup are not assigned to a participant by #39. The verification log names the owner for each demo step; shared setup is marked accordingly.
+
 ## Evidence rules
 
 - Every command and demo step is marked **verified** or **pending verification**. A step becomes verified only after someone ran it and observed the expected result.
@@ -65,6 +77,8 @@ Run from the repository root. Follow [Local development setup](../setup.md) for 
    docker compose ps
    ```
 
+   Status: **verified on Windows 11** (see the verification log); macOS verification is **pending**.
+
 2. Load `.env` into the current shell, set the `local` profile, and start the backend.
 
    **Windows (PowerShell):**
@@ -94,6 +108,8 @@ Run from the repository root. Follow [Local development setup](../setup.md) for 
 
    If port 8080 is already in use, check whether the process is our backend before stopping it: `curl` the read API. A running backend is not a failure. Expected: the backend starts at `http://localhost:8080` and Flyway applies `V1__create_reservations.sql` without error.
 
+   Status: **verified on Windows 11** (see the verification log); macOS verification is **pending**.
+
 3. In a second terminal, start the dashboard.
 
    **Windows (PowerShell):**
@@ -114,6 +130,8 @@ Run from the repository root. Follow [Local development setup](../setup.md) for 
 
    Expected: `http://localhost:3000/dashboard` shows the staff dashboard. The page opens on today's date in `Europe/Madrid`.
 
+   Status: the API rewrite through `:3000` is **verified** (see the verification log); a clean startup and visual check are **pending**.
+
 4. Live mode only: expose the backend to Vonage with a tunnel.
 
    ```powershell
@@ -133,14 +151,18 @@ Demo bookings are created at demo time through the approved API. They are not a 
    **Windows (PowerShell):**
 
    ```powershell
-   $demoDate = (Get-Date).AddDays(1).ToString('yyyy-MM-dd')
+   $madridTimeZone = [TimeZoneInfo]::FindSystemTimeZoneById('Romance Standard Time')
+   $madridDate = [TimeZoneInfo]::ConvertTime([DateTimeOffset]::UtcNow, $madridTimeZone).Date
+   $demoDate = $madridDate.AddDays(1).ToString('yyyy-MM-dd')
    ```
 
    **macOS (Terminal):**
 
    ```bash
-   demoDate=$(date -v+1d +%F)
+   demoDate=$(TZ='Europe/Madrid' date -v+1d +%F)
    ```
+
+   Status: **pending verification** for both date-generation commands.
 
 2. Create one lunch booking and one dinner booking. Replace `DEMO_DATE` with the date you computed.
 
@@ -168,6 +190,8 @@ Demo bookings are created at demo time through the approved API. They are not a 
 
    Expected: `201 Created` with an `id` and a `diningSession` (`LUNCH`, then `DINNER`). Record both ids; the reset path uses them.
 
+   Status: **verified on Windows 11** (see the verification log); macOS verification is **pending**.
+
 3. Confirm the read model.
 
    **Windows (PowerShell):**
@@ -184,21 +208,27 @@ Demo bookings are created at demo time through the approved API. They are not a 
 
    Expected: lunch `occupiedCapacity: 2` with `availableCapacity: 28`, dinner `occupiedCapacity: 4` with `availableCapacity: 26`, both at `totalCapacity: 30`.
 
+   Status: **verified on Windows 11** (see the verification log); macOS verification is **pending**.
+
 ## Demonstration sequence
 
-The sequence below is the demo script. Steps 1, 2, 4, and 5 need the integrated journeys and are marked pending; steps 3 and 6 exercise the merged backend and dashboard.
+The sequence below is the demo script. Voice and notification interactions (steps 1–3), the dashboard visual check (step 4), the manual form (step 5), and reset (step 6) remain pending where marked. Previously verified backend checks are recorded in the log.
 
 ### 1. Confirmed telephone reservation
 
-Action: call the Vonage number from the consenting phone. Give a fictional name, the consenting contact number, the demo date, dinner at 21:00, and a party of 2. Answer that the number can receive SMS. Confirm the readback.
+Owners: **Inés** leads the incoming call and guided capture; **Andrea** leads final confirmation and persistence; **Joana** refreshes the dashboard and shows the SMS request outcome for the eligible booking.
 
-Expected: the call follows the approved journey in RN-04 and RN-05; the voice confirms only after the reservation is persisted; the dashboard shows the new dinner row after a refresh. The exact prompts are defined by #36 and #37.
+Action: call the Vonage number from the consenting phone. Inés demonstrates the Spanish greeting and captures a fictional name, the consenting contact number, the demo date, dinner at 21:00, and a party of 2. To show correction handling, ask to correct one field; the system should ask which field, capture only that value, read the updated summary, and request confirmation again. If an answer is invalid or unrecognised, note the Spanish retry prompt heard; do not invent prompt wording. Answer that the corrected contact number can receive SMS. Andrea gives the explicit affirmative confirmation. Joana refreshes the dashboard and checks whether the SMS request was accepted or failed.
 
-Evidence: the reservation `id`, the dashboard row, and the notification record from step 4. The SMS itself is observed on the phone; do not publish the number or the message content.
+Expected: the call follows the approved journey in RN-04, RN-05, and RN-08; the voice confirms only after the reservation is persisted. The dashboard shows the new dinner row after Joana refreshes it. The SMS request outcome is distinct from delivery status. The exact prompts are defined by #36 and #37.
+
+Evidence: the reservation `id`, the dashboard row, and the notification record from step 3. The SMS itself is observed on the phone; do not publish the number or the message content.
 
 Status: **pending verification** (blocked by #37).
 
 ### 2. Capacity and same-date alternative
+
+Owners: **Inés** leads the caller's guided flow; **Andrea** leads the same-date alternative and reservation outcome.
 
 Action: fill dinner to capacity with one booking of the remaining places, then call again and ask for dinner for 2 on the same date.
 
@@ -225,15 +255,27 @@ Status: the `409` case is verified (see the log); the voice alternative is **pen
 
 ### 3. Notification outcome
 
-Action: after step 1, observe the SMS on the consenting phone and read the notification record. In the step 2 call, answer that the number cannot receive SMS.
+Owners: **Joana** shows whether the eligible telephone booking's request was accepted or failed; **Andrea** explains the notification's delivery status and distinguishes acceptance from delivery.
 
-Expected: an eligible number produces a request accepted by Vonage with a `message_uuid`, recorded as accepted rather than delivered; the final state arrives later, and SMS final status can take up to 72 hours. A number that cannot receive SMS or whose capability is unknown keeps the reservation confirmed, requests no message, and records the reason. A request or delivery failure never cancels the reservation.
+Action: after step 1, observe the SMS on the consenting phone and read the notification record created by migration V2 in #30. In the step 2 call, answer that the number cannot receive SMS.
+
+Use the reservation id from step 1. This query reads only the id, status, and safe failure reason; do not include contact data or raw provider payloads.
+
+**Windows (PowerShell) and macOS (Terminal):**
+
+```text
+docker compose exec postgres psql -U POSTGRES_USER -d POSTGRES_DB -c "SELECT reservation_id, status, failure_reason FROM reservation_notifications WHERE reservation_id = 'RESERVATION_ID';"
+```
+
+Expected: for an eligible number, Joana shows whether Vonage accepted the request or it failed; Andrea explains that acceptance is not delivery. A later status callback may report the final state, and SMS final status can take up to 72 hours. A number that cannot receive SMS or whose capability is unknown keeps the reservation confirmed, requests no message, and records the reason. A request or delivery failure never cancels the reservation.
 
 Evidence: the notification state and reason, without contact data or raw payloads.
 
-Status: **pending verification** (blocked by #30, #33, #34). The table and column names will be defined by #30; this guide will name the exact query once they exist.
+Status: **pending verification** (the request flow in #33 remains open; the callback work in #34 is merged but still needs integrated verification).
 
 ### 4. Dashboard visibility
+
+Owner: **Joana**.
 
 Action: open `http://localhost:3000/dashboard`, select the demo date, and press **Refresh**.
 
@@ -242,6 +284,8 @@ Expected: a Lunch section (`13:00–16:00`) and a Dinner section (`20:00–23:30
 Status: **pending verification** (visual check; the API and proxy path are verified in the log).
 
 ### 5. Manual reservation creation
+
+Owner: **Joana**.
 
 Action: until #29 merges, create the manual reservation through the API, then refresh the dashboard.
 
@@ -271,22 +315,24 @@ Then attempt a party of 30 on a service that already has bookings.
 
 Expected: `201 Created` for the valid booking and the dashboard row and capacity updated after a refresh. The oversized party returns `409 Conflict` with `diningSession`, `availableCapacity`, and `requestedPartySize`, and no row is created.
 
-Status: API path verified (see the log). The dashboard form is **pending verification** (blocked by #29).
+Status: the manual API fallback is **pending verification** because the prior run's response evidence was not recorded. The dashboard form and its refresh behaviour are **pending verification** (blocked by #29).
 
 ### 6. Reset
 
-Delete the demo bookings by id, or reset the whole local database.
+Owner: shared demo operator.
 
-**Windows (PowerShell):**
+Capture the notification status and failure reason before deleting a booking. The notification row references its reservation without cascade deletion, so remove the notification row first.
+
+**Windows (PowerShell) and macOS (Terminal):**
 
 ```powershell
-docker compose exec postgres psql -U POSTGRES_USER -d POSTGRES_DB -c "DELETE FROM reservations WHERE id = 'RESERVATION_ID';"
+docker compose exec postgres psql -U POSTGRES_USER -d POSTGRES_DB -c "SELECT reservation_id, status, failure_reason FROM reservation_notifications WHERE reservation_id = 'RESERVATION_ID';"
 ```
 
-**macOS (Terminal):**
+After recording the output in the verification log, delete the notification and reservation in one transaction. Repeat for each recorded reservation id.
 
-```bash
-docker compose exec postgres psql -U POSTGRES_USER -d POSTGRES_DB -c "DELETE FROM reservations WHERE id = 'RESERVATION_ID';"
+```text
+docker compose exec postgres psql -v ON_ERROR_STOP=1 -U POSTGRES_USER -d POSTGRES_DB -c "BEGIN; DELETE FROM reservation_notifications WHERE reservation_id = 'RESERVATION_ID'; DELETE FROM reservations WHERE id = 'RESERVATION_ID'; COMMIT;"
 ```
 
 Replace `POSTGRES_USER` and `POSTGRES_DB` with the values from your `.env`, and `RESERVATION_ID` with a recorded id. To discard everything instead:
@@ -296,9 +342,11 @@ docker compose down -v
 docker compose up -d
 ```
 
-The second form permanently deletes all local data. Use it between rehearsals, not during a demonstration.
+The full reset permanently deletes all local reservations and notification evidence. Use it between rehearsals, not during a demonstration, and capture the evidence first.
 
 Expected: the deleted rows disappear from the dashboard and capacity returns to its previous value.
+
+Status: **pending verification**. Confirm the recorded ids and preserve evidence before running either reset command.
 
 ## Recovery from a failed or interrupted demonstration
 
@@ -310,11 +358,13 @@ Expected: the deleted rows disappear from the dashboard and capacity returns to 
 - **An SMS request has an ambiguous outcome.** Do not resend it. `vonage-01` found no idempotency key for a repeated SMS request, so a retry may send a second message. Record the unknown state and continue.
 - **Between rehearsals.** Delete the recorded reservation ids or run the full reset. Never hand-edit rows to make a step pass, and never delete a notification record that is the evidence for a step.
 
-Preserve evidence before any reset: copy the read API output and the reservation ids into the verification log. Resetting first destroys the evidence.
+Preserve evidence before any reset: copy a redacted read API result containing only required identifiers, date, time, service, and party-size data; record reservation ids, notification status, and failure reason from the query in step 3. Resetting first destroys the evidence.
+
+Status: **pending verification** in the integrated walkthrough; do not report these recovery paths as observed until exercised.
 
 ## Known limitations and fallback wording
 
-- Spanish speech recognition and playback are documented for `es-ES` but have never been exercised in a call (`vonage-01`). If capture fails during the demo, say so plainly: the provider contract is documented, the practical recognition is unverified.
+- Spanish speech recognition and playback are documented for `es-ES`. A fixed es-ES prompt was heard, and speech-input callbacks arrived for the three fictional scenarios tested. The temporary harness intentionally recorded only whether a speech callback was received. It did not store, publish, or evaluate complete transcripts. This confirms practical callback and Spanish playback/input viability for the tested scenarios only. It does not prove unrestricted Spanish recognition, name capture, semantic validation, retry behaviour, or production readiness.
 - The Messages Sandbox does not list SMS, so SMS testing uses the account's real SMS access and credits.
 - SMS final delivery status can take up to 72 hours. A request accepted by Vonage is not proof of delivery, and the voice confirmation must never promise delivery.
 - The manual reservation form (#29) is not merged; manual creation is demonstrated through the API.
@@ -327,24 +377,30 @@ Preserve evidence before any reset: copy the read API output and the reservation
 
 Record every run here. Do not mark a step verified without an observed result.
 
-| Step | Environment | Expected | Observed | Status |
-| --- | --- | --- | --- | --- |
-| Start PostgreSQL | Windows 11, Docker Compose | `postgres` healthy | healthy | verified |
-| Start backend, `local` profile | Windows 11 | Starts on `:8080`, Flyway applies V1 | Already running on `:8080`; Flyway validated and applied V1 in the run attempt; API returns 200 | verified |
-| Seed: lunch and dinner bookings | Windows 11 | `201` with `id` and `diningSession` | `201 LUNCH`, `201 DINNER` | verified |
-| Read API for the demo date | Windows 11 | Capacity 2/28 and 4/26 of 30 | as expected | verified |
-| Capacity rejection | Windows 11 | `409` with capacity extensions, nothing persisted | `409`, available 26, no row | verified |
-| Frontend rewrite to the backend | Windows 11 | `GET /api/reservations` through `:3000` returns the same JSON | JSON with matching capacity returned | verified |
-| Dashboard visual check | Windows 11 and macOS | Sections, ordering, capacity, empty and error states | pending | pending |
-| Confirmed telephone reservation | Windows 11, authorized live access | Voice confirms after persistence, SMS requested | pending | pending |
-| Same-date alternative by voice | Windows 11, authorized live access | Lunch offered, dinner full | pending | pending |
-| Notification outcomes | Windows 11, authorized live access | Accepted vs delivered, skipped reason recorded | pending | pending |
-| Manual creation form | Windows 11 and macOS | Form creates and refreshes the dashboard | pending | pending |
-| macOS commands | macOS Sequoia | Same results as Windows | pending | pending |
+| Step | Owner(s) | Environment | Expected | Observed | Status |
+| --- | --- | --- | --- | --- | --- |
+| Start PostgreSQL | Shared setup | Windows 11, Docker Compose | `postgres` healthy | healthy | verified |
+| Start backend, `local` profile | Shared setup | Windows 11 | Starts on `:8080`, Flyway applies V1 | Already running on `:8080`; Flyway validated and applied V1 in the run attempt; API returns 200 | verified |
+| Seed: lunch and dinner bookings | Shared setup | Windows 11 | `201` with `id` and `diningSession` | `201 LUNCH`, `201 DINNER` | verified |
+| Read API for the demo date | Shared setup | Windows 11 | Capacity 2/28 and 4/26 of 30 | as expected | verified |
+| Capacity rejection via API | Shared setup | Windows 11 | `409` with capacity extensions, nothing persisted | `409`, available 26, no row | verified |
+| Frontend rewrite to the backend | Joana | Windows 11 | `GET /api/reservations` through `:3000` returns the same JSON | JSON with matching capacity returned | verified |
+| Dashboard visual check | Joana | Windows 11 and macOS | Sections, ordering, capacity, empty and error states; refresh shows the selected date | pending | pending |
+| Confirmed telephone reservation | Inés (call and capture); Andrea (confirmation and persistence); Joana (dashboard and SMS request) | Authorized live access | Spanish greeting and guided capture; correction/retry path; voice confirms after persistence; dashboard row; SMS request outcome shown | pending | pending |
+| Same-date alternative by voice | Inés (call); Andrea (alternative) | Authorized live access | Lunch offered when dinner is full; accepted option persists, or no reservation if declined | pending | pending |
+| Notification outcomes | Joana (request); Andrea (delivery status) | Authorized live access | Request accepted or failed is shown separately from delivered status; skipped reason recorded when applicable | pending | pending |
+| Manual reservation API fallback | Joana | Windows 11 | Valid reservation is created; oversized party is rejected without a row | Prior run lacks recorded response evidence; rerun required | pending |
+| Manual creation form | Joana | Windows 11 and macOS | Form creates a reservation and refreshes the dashboard | pending | pending |
+| Date-generation commands | Shared setup | Windows 11 and macOS | Date at least one day ahead in `Europe/Madrid` | pending | pending |
+| Tunnel setup | Shared setup | Authorized live session | HTTPS callback URL registered for the required webhooks | pending | pending |
+| Reset and cleanup | Shared demo operator | Windows 11 and macOS | Recorded demo rows removed; capacity returns; full reset restores local database | pending | pending |
+| Recovery paths | Shared demo operator | Integrated walkthrough | Interrupted/failed steps recover without duplicate reservations or lost evidence | pending | pending |
+| Clean or separately configured walkthrough | Shared | Teammate's authorized local configuration | Teammate follows setup, fictional data, demo, and reset steps without machine-specific secrets | pending | pending |
+| macOS commands | Shared setup | macOS Sequoia | Same results as Windows | pending | pending |
 
 ## Open items
 
 - Confirm the account, consenting number, credits, and tunnel tool for the live session before running steps 1, 2, and 3.
-- Update the notification evidence step with the exact query once #30 defines the table.
-- Replace the pending markers after the integrated journeys merge and the session has actually run.
+- Record only the notification id, status, and failure reason in evidence; do not include contact data or raw payloads.
+- Replace pending markers only after the integrated journeys merge and the steps have actually run. Complete and record a clean or separately configured teammate walkthrough before closing #39.
 - Cite the automated evidence from #38 for scenarios that are covered by tests and not repeated by hand.
