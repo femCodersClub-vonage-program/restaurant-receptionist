@@ -8,6 +8,7 @@ All repository content, including these guides, is written in English. Team conv
 
 | Guide | Purpose |
 | --- | --- |
+| [Demo runbook](demo-runbook.md) | Run the controlled local MVP demo, reset it, and record what was verified. |
 | [Flyway migrations](flyway-migrations.md) | Create, validate, coordinate, and recover versioned database migrations safely. |
 | [Vonage developer tooling](vonage-developer-tooling.md) | Set up the Vonage MCP server and CLI locally without sharing credentials. |
 
