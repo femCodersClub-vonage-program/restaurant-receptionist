@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 
 import { Alert, Button, Header, Input } from "@/components/ui";
-import { ServiceSection } from "@/components/dashboard";
+import { ReservationForm, ServiceSection } from "@/components/dashboard";
 import {
   fetchReservationsByDate,
   type DiningSessionKey,
@@ -22,6 +23,10 @@ const SESSIONS: SessionDescriptor[] = [
   { key: "LUNCH", title: "Lunch", arrivalWindow: "13:00–16:00" },
   { key: "DINNER", title: "Dinner", arrivalWindow: "20:00–23:30" },
 ];
+
+const ARRIVAL_WINDOWS_HINT = SESSIONS.map(
+  (session) => `${session.title} ${session.arrivalWindow}`,
+).join(", ");
 
 const GENERIC_ERROR =
   "Reservation data could not be loaded. Please try again.";
@@ -56,6 +61,8 @@ export default function DashboardView() {
   const [data, setData] = useState<ReservationsResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState<string>("");
+  const [formOpen, setFormOpen] = useState(false);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const latestRequestRef = useRef(0);
 
   const status: DashboardStatus =
@@ -106,6 +113,11 @@ export default function DashboardView() {
     loadForDate(date);
   }
 
+  function handleCloseForm() {
+    setFormOpen(false);
+    toggleButtonRef.current?.focus();
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6">
       <Header
@@ -130,14 +142,33 @@ export default function DashboardView() {
             onChange={(event) => handleDateChange(event.target.value)}
           />
         </div>
-        <Button
-          variant="secondary"
-          loading={status === "loading"}
-          onClick={handleRefresh}
-        >
-          Refresh
-        </Button>
+        <div className="flex gap-3 sm:ml-auto">
+          <Button
+            variant="secondary"
+            loading={status === "loading"}
+            onClick={handleRefresh}
+          >
+            Refresh
+          </Button>
+          <Button
+            ref={toggleButtonRef}
+            aria-expanded={formOpen}
+            aria-controls={formOpen ? "new-reservation-form" : undefined}
+            onClick={() => setFormOpen((open) => !open)}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            New reservation
+          </Button>
+        </div>
       </div>
+
+      {formOpen && (
+        <ReservationForm
+          defaultDate={date}
+          arrivalWindowsHint={ARRIVAL_WINDOWS_HINT}
+          onClose={handleCloseForm}
+        />
+      )}
 
       {status === "error" ? (
         <Alert variant="error" title="Could not load reservations">
