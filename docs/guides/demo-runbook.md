@@ -2,7 +2,7 @@
 
 This guide describes how to run the fictional Restaurant Receptionist MVP demo in a controlled local environment, and how to record what was actually verified. It is written for a teammate who has her own authorized local configuration.
 
-Status: draft. Steps marked **pending** depend on the integrated Voice journey (#35 to #37), the notification journey (#30, #33, #34), and the manual reservation form (#29). Do not treat a pending step as verified.
+Status: draft. Pending steps include the integrated Voice journey (#35 to #37), the SMS request flow (#33), and the manual reservation form (#29). Notification persistence (#30) and status-callback processing (#34) are merged, but end-to-end demo verification remains pending. Do not treat proposals as approved or pending steps as verified.
 
 Related documents: [MVP specification](../mvp-specification.md), [Business rules](../business-rules.md), [Local development setup](../setup.md), [Vonage integration](../vonage-integration.md), [Vonage contract research](../../specs/vonage-01-contract-verification.spec.md).
 
@@ -39,7 +39,9 @@ Install and verify the tools listed in [Local development setup](../setup.md#pre
 
 ### Vonage access
 
-`vonage-01` records these as the prerequisites for a controlled test. They are confirmed as requirements; the values belong in local configuration only.
+`vonage-01` records these as the technical prerequisites for a controlled test. The proposed project account and Voice-enabled number for the integrated demo have not yet been confirmed by the mentor.
+
+**Proposal, pending mentor confirmation:** use a project Vonage account and a Voice-enabled number for the integrated demo. Do not treat this as the agreed demo setup until the decision is recorded.
 
 - An account with Voice API access and Messages API SMS access.
 - A Voice-capable number linked to a Voice application, and a permitted SMS sender.
@@ -106,9 +108,9 @@ Run from the repository root. Follow [Local development setup](../setup.md) for 
    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
    ```
 
-   If port 8080 is already in use, check whether the process is our backend before stopping it: `curl` the read API. A running backend is not a failure. Expected: the backend starts at `http://localhost:8080` and Flyway applies `V1__create_reservations.sql` without error.
+   If port 8080 is already in use, check whether the process is our backend before stopping it: `curl` the read API. A running backend is not a failure. Expected: the backend starts at `http://localhost:8080` and Flyway applies the current migrations, `V1__create_reservations.sql` and `V2__create_reservation_notifications.sql`, without error.
 
-   Status: **verified on Windows 11** (see the verification log); macOS verification is **pending**.
+   Status: backend startup and V1 are **verified on Windows 11**; V2 application was not recorded and remains **pending verification**. macOS verification is **pending**.
 
 3. In a second terminal, start the dashboard.
 
@@ -138,13 +140,15 @@ Run from the repository root. Follow [Local development setup](../setup.md) for 
    ngrok http 8080
    ```
 
-   Expected: ngrok prints a public HTTPS URL. Register it as the Voice application's `answer_url` and `event_url` and as the Messages status webhook, then keep the terminal open for the whole session. The URL changes when the tunnel restarts, so re-register it after a restart.
+   Expected: ngrok prints a public HTTPS URL for the webhook configuration. If the URL changes after a restart, update the configured webhooks.
 
-   The tunnel tool is not yet decided by the project; `ngrok` is the option recommended by the Vonage webhook documentation. **Pending verification.**
+   **Proposal, pending mentor confirmation:** use `ngrok` for the local demo tunnel. Vonage recommends ngrok for local webhook testing in its [Testing with ngrok guide](https://developer.vonage.com/en/getting-started/tools/ngrok#testing-with-ngrok). This documented recommendation does not mean the project's tunnel choice is approved.
+
+   **Pending decision and setup verification.**
 
 ## Prepare the demo data
 
-Demo bookings are created at demo time through the approved API. They are not a migration: a Flyway seed would also apply to the test database and could not seed a date that is valid on the demo day.
+**Proposed setup, pending mentor confirmation:** create the fictional lunch and dinner bookings at demo time with two `POST /api/reservations` calls. The Windows commands have previously returned `201` responses (see the verification log), but that verifies the API behavior only, not approval to use these calls as the standard demo setup. They are not a migration: a Flyway seed would also apply to the test database and could not seed a date that is valid on the demo day.
 
 1. Choose a date at least one day ahead, so the demo does not depend on the current time. The restaurant uses `Europe/Madrid`.
 
@@ -164,7 +168,7 @@ Demo bookings are created at demo time through the approved API. They are not a 
 
    Status: **pending verification** for both date-generation commands.
 
-2. Create one lunch booking and one dinner booking. Replace `DEMO_DATE` with the date you computed.
+2. **Proposed setup, pending mentor confirmation:** create one lunch booking and one dinner booking. Replace `DEMO_DATE` with the date you computed.
 
    **Windows (PowerShell):**
 
@@ -218,7 +222,7 @@ The sequence below is the demo script. Voice and notification interactions (step
 
 Owners: **Inés** leads the incoming call and guided capture; **Andrea** leads final confirmation and persistence; **Joana** refreshes the dashboard and shows the SMS request outcome for the eligible booking.
 
-Action: call the Vonage number from the consenting phone. Inés demonstrates the Spanish greeting and captures a fictional name, the consenting contact number, the demo date, dinner at 21:00, and a party of 2. To show correction handling, ask to correct one field; the system should ask which field, capture only that value, read the updated summary, and request confirmation again. If an answer is invalid or unrecognised, note the Spanish retry prompt heard; do not invent prompt wording. Answer that the corrected contact number can receive SMS. Andrea gives the explicit affirmative confirmation. Joana refreshes the dashboard and checks whether the SMS request was accepted or failed.
+Proposed action: call from the consenting phone and provide fictional reservation details and the consenting contact number. Demonstrate a retry or correction and confirm the readback. Inés and Andrea will complete and verify the call steps and prompts as their flows become available.
 
 Expected: the call follows the approved journey in RN-04, RN-05, and RN-08; the voice confirms only after the reservation is persisted. The dashboard shows the new dinner row after Joana refreshes it. The SMS request outcome is distinct from delivery status. The exact prompts are defined by #36 and #37.
 
@@ -255,11 +259,11 @@ Status: the `409` case is verified (see the log); the voice alternative is **pen
 
 ### 3. Notification outcome
 
-Owners: **Joana** shows whether the eligible telephone booking's request was accepted or failed; **Andrea** explains the notification's delivery status and distinguishes acceptance from delivery.
+Owners: **Joana** shows whether the eligible telephone booking's request was accepted, failed, or has an unknown outcome; **Andrea** explains the notification's delivery status and distinguishes acceptance from delivery.
 
-Action: after step 1, observe the SMS on the consenting phone and read the notification record created by migration V2 in #30. In the step 2 call, answer that the number cannot receive SMS.
+Proposed action: after step 1, check the notification record and, if delivered, the SMS on the consenting phone. In the step 2 call, answer that the number cannot receive SMS.
 
-Use the reservation id from step 1. This query reads only the id, status, and safe failure reason; do not include contact data or raw provider payloads.
+**Proposed query, pending verification:** replace `POSTGRES_USER` and `POSTGRES_DB` with the values from the root `.env`, and `RESERVATION_ID` with the id from step 1. This query reads only the reservation id, status, and safe failure reason; do not include contact data or raw provider payloads.
 
 **Windows (PowerShell) and macOS (Terminal):**
 
@@ -267,7 +271,7 @@ Use the reservation id from step 1. This query reads only the id, status, and sa
 docker compose exec postgres psql -U POSTGRES_USER -d POSTGRES_DB -c "SELECT reservation_id, status, failure_reason FROM reservation_notifications WHERE reservation_id = 'RESERVATION_ID';"
 ```
 
-Expected: for an eligible number, Joana shows whether Vonage accepted the request or it failed; Andrea explains that acceptance is not delivery. A later status callback may report the final state, and SMS final status can take up to 72 hours. A number that cannot receive SMS or whose capability is unknown keeps the reservation confirmed, requests no message, and records the reason. A request or delivery failure never cancels the reservation.
+Expected: show whether the request was accepted, failed, or has an unknown outcome (`REQUEST_OUTCOME_UNKNOWN`); acceptance is not delivery. A later callback may report the final status, which can take up to 72 hours. Do not resend an unknown outcome. If SMS capability is negative or unknown, record why no message was requested. A request or delivery failure never cancels the reservation.
 
 Evidence: the notification state and reason, without contact data or raw payloads.
 
@@ -321,7 +325,7 @@ Status: the manual API fallback is **pending verification** because the prior ru
 
 Owner: shared demo operator.
 
-Capture the notification status and failure reason before deleting a booking. The notification row references its reservation without cascade deletion, so remove the notification row first.
+**Proposed cleanup, pending verification:** capture the notification status and failure reason before deleting a booking. The notification row references its reservation without cascade deletion, so remove the notification row first.
 
 **Windows (PowerShell) and macOS (Terminal):**
 
@@ -364,14 +368,14 @@ Status: **pending verification** in the integrated walkthrough; do not report th
 
 ## Known limitations and fallback wording
 
-- Spanish speech recognition and playback are documented for `es-ES`. A fixed es-ES prompt was heard, and speech-input callbacks arrived for the three fictional scenarios tested. The temporary harness intentionally recorded only whether a speech callback was received. It did not store, publish, or evaluate complete transcripts. This confirms practical callback and Spanish playback/input viability for the tested scenarios only. It does not prove unrestricted Spanish recognition, name capture, semantic validation, retry behaviour, or production readiness.
+- In the controlled test in [#51](https://github.com/femCodersClub-vonage-program/restaurant-receptionist/issues/51), a fixed `es-ES` prompt was heard and speech-input callbacks arrived for fictional date, time, and party-size scenarios. The harness recorded only callback receipt, not transcripts. This does not prove unrestricted recognition, name capture, semantic validation, retry behaviour, or production readiness.
 - The Messages Sandbox does not list SMS, so SMS testing uses the account's real SMS access and credits.
 - SMS final delivery status can take up to 72 hours. A request accepted by Vonage is not proof of delivery, and the voice confirmation must never promise delivery.
 - The manual reservation form (#29) is not merged; manual creation is demonstrated through the API.
 - Notification state is persisted but not displayed in the dashboard (#30 excludes dashboard display).
 - The demo has no login or authentication (RN-07). It runs on a local machine and must not be exposed beyond the tunnel used for webhooks.
 - Capacity is fixed at 30 guests per service. There is no cancellation or modification in the MVP, so releasing capacity means deleting rows.
-- A public tunnel exposes the backend. Webhook signature verification belongs to #35 and #34; until it is implemented, treat the tunnel as a temporary, authorized session only.
+- Signed webhook verification is integrated for Messages (#34, #56); Voice integration (#35) remains in review. Use a public tunnel only for an authorized, temporary session.
 
 ## Verification log
 
@@ -380,19 +384,22 @@ Record every run here. Do not mark a step verified without an observed result.
 | Step | Owner(s) | Environment | Expected | Observed | Status |
 | --- | --- | --- | --- | --- | --- |
 | Start PostgreSQL | Shared setup | Windows 11, Docker Compose | `postgres` healthy | healthy | verified |
-| Start backend, `local` profile | Shared setup | Windows 11 | Starts on `:8080`, Flyway applies V1 | Already running on `:8080`; Flyway validated and applied V1 in the run attempt; API returns 200 | verified |
-| Seed: lunch and dinner bookings | Shared setup | Windows 11 | `201` with `id` and `diningSession` | `201 LUNCH`, `201 DINNER` | verified |
+| Start backend, `local` profile | Shared setup | Windows 11 | Starts on `:8080` | Already running on `:8080`; API returns 200 | verified |
+| Apply current Flyway migrations | Shared setup | Windows 11 | V1 reservations and V2 notification migrations apply | V1 validated and applied; V2 result not recorded | pending verification |
+| Proposed seed setup: two `POST /api/reservations` calls | Shared setup | Windows 11 | `201` with `id` and `diningSession`; mentor decision to use these calls as standard setup recorded | `201 LUNCH`, `201 DINNER`; setup decision pending | API behavior verified; setup proposal pending |
 | Read API for the demo date | Shared setup | Windows 11 | Capacity 2/28 and 4/26 of 30 | as expected | verified |
 | Capacity rejection via API | Shared setup | Windows 11 | `409` with capacity extensions, nothing persisted | `409`, available 26, no row | verified |
 | Frontend rewrite to the backend | Joana | Windows 11 | `GET /api/reservations` through `:3000` returns the same JSON | JSON with matching capacity returned | verified |
+| Controlled Spanish Voice proof (#51) | Project mentor (GabyB73) | Authorized controlled test | Fixed `es-ES` prompt; callbacks for fictional date, time, and party-size scenarios; fixed next NCCO returned | Three short calls; no unexpected cost; no transcripts or recordings; temporary harness and tunnel stopped | verified with stated limitations |
+| Project account and Voice number decision | Shared / mentor decision | Integrated demo | Project account and Voice-enabled number agreed | pending | pending decision |
 | Dashboard visual check | Joana | Windows 11 and macOS | Sections, ordering, capacity, empty and error states; refresh shows the selected date | pending | pending |
 | Confirmed telephone reservation | Inés (call and capture); Andrea (confirmation and persistence); Joana (dashboard and SMS request) | Authorized live access | Spanish greeting and guided capture; correction/retry path; voice confirms after persistence; dashboard row; SMS request outcome shown | pending | pending |
 | Same-date alternative by voice | Inés (call); Andrea (alternative) | Authorized live access | Lunch offered when dinner is full; accepted option persists, or no reservation if declined | pending | pending |
-| Notification outcomes | Joana (request); Andrea (delivery status) | Authorized live access | Request accepted or failed is shown separately from delivered status; skipped reason recorded when applicable | pending | pending |
+| Notification outcomes | Joana (request); Andrea (delivery status) | Authorized live access | Request accepted, failed, or unknown (`REQUEST_OUTCOME_UNKNOWN`) is shown separately from delivered status; skipped reason recorded when applicable | pending | pending |
 | Manual reservation API fallback | Joana | Windows 11 | Valid reservation is created; oversized party is rejected without a row | Prior run lacks recorded response evidence; rerun required | pending |
 | Manual creation form | Joana | Windows 11 and macOS | Form creates a reservation and refreshes the dashboard | pending | pending |
 | Date-generation commands | Shared setup | Windows 11 and macOS | Date at least one day ahead in `Europe/Madrid` | pending | pending |
-| Tunnel setup | Shared setup | Authorized live session | HTTPS callback URL registered for the required webhooks | pending | pending |
+| Proposed ngrok tunnel setup | Shared setup / mentor decision | Authorized live session | Mentor confirms ngrok; HTTPS callback URL registered for required webhooks | pending | pending decision and verification |
 | Reset and cleanup | Shared demo operator | Windows 11 and macOS | Recorded demo rows removed; capacity returns; full reset restores local database | pending | pending |
 | Recovery paths | Shared demo operator | Integrated walkthrough | Interrupted/failed steps recover without duplicate reservations or lost evidence | pending | pending |
 | Clean or separately configured walkthrough | Shared | Teammate's authorized local configuration | Teammate follows setup, fictional data, demo, and reset steps without machine-specific secrets | pending | pending |
@@ -400,7 +407,8 @@ Record every run here. Do not mark a step verified without an observed result.
 
 ## Open items
 
-- Confirm the account, consenting number, credits, and tunnel tool for the live session before running steps 1, 2, and 3.
-- Record only the notification id, status, and failure reason in evidence; do not include contact data or raw payloads.
+- Record the mentor's decision on the proposed project account and Voice number, ngrok tunnel, and two `POST /api/reservations` seed calls before treating them as the agreed demo setup.
+- Confirm the consenting contact, credits, and callback reachability for the live session before running steps 1 to 3.
+- Record only the reservation id, status, and failure reason from the notification query; do not include contact data or raw payloads.
 - Replace pending markers only after the integrated journeys merge and the steps have actually run. Complete and record a clean or separately configured teammate walkthrough before closing #39.
 - Cite the automated evidence from #38 for scenarios that are covered by tests and not repeated by hand.
